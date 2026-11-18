@@ -1,0 +1,2666 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>نئون‌ورس ۲۰۲۷ | پلتفرم بازی سه‌بعدی و نبرد طراحی با هوش مصنوعی</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Three.js for 3D Spatial Graphics -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <!-- Vazirmatn Persian Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Vazirmatn', 'sans-serif'],
+                    },
+                    colors: {
+                        cyber: {
+                            blue: '#4aa3ff',
+                            orange: '#ff8a1f',
+                            green: '#6ee7a8',
+                            pink: '#ff5fa2',
+                            purple: '#9d5cff'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        :root {
+            --bg-primary: #f4f7fb;
+            --bg-secondary: rgba(255, 255, 255, 0.78);
+            --bg-card: rgba(255, 255, 255, 0.85);
+            --text-primary: #0f172a;
+            --text-secondary: #475569;
+            --border-glass: rgba(15, 23, 42, 0.12);
+            --accent-glow: rgba(74, 163, 255, 0.25);
+            --canvas-bg: #ffffff;
+        }
+
+        html.dark {
+            --bg-primary: #050814;
+            --bg-secondary: rgba(13, 19, 40, 0.72);
+            --bg-card: rgba(17, 25, 54, 0.68);
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --border-glass: rgba(255, 255, 255, 0.12);
+            --accent-glow: rgba(74, 163, 255, 0.35);
+            --canvas-bg: #0b1124;
+        }
+
+        * {
+            box-sizing: border-box;
+            font-family: 'Vazirmatn', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            overflow-x: hidden;
+            transition: background-color 0.4s cubic-bezier(0.4, 0, 0.2, 1), color 0.4s ease;
+        }
+
+        /* 3D Background Canvas */
+        #bg-3d-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 0;
+            pointer-events: auto;
+        }
+
+        /* 2027 Spatial Glassmorphism */
+        .spatial-glass {
+            background: var(--bg-card);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--border-glass);
+            box-shadow: 0 20px 50px -15px rgba(0, 0, 0, 0.25), 0 0 25px -5px var(--accent-glow);
+            transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        /* 3D Tilt Card Effect */
+        .tilt-card {
+            transform-style: preserve-3d;
+            perspective: 1000px;
+            transition: transform 0.2s ease-out, box-shadow 0.3s ease;
+        }
+        .tilt-card-inner {
+            transform: translateZ(20px);
+        }
+
+        /* Neon Glowing Borders & Buttons */
+        .neon-btn {
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+        .neon-btn:hover {
+            transform: translateY(-2px) scale(1.02);
+            box-shadow: 0 0 25px rgba(74, 163, 255, 0.6), 0 0 50px rgba(255, 95, 162, 0.3);
+        }
+        .neon-btn:active {
+            transform: translateY(0) scale(0.98);
+        }
+
+        /* Active Navigation Pill */
+        .nav-pill.active {
+            background: linear-gradient(135deg, #4aa3ff 0%, #9d5cff 50%, #ff5fa2 100%);
+            color: #ffffff !important;
+            box-shadow: 0 8px 25px -4px rgba(157, 92, 255, 0.6);
+            border-color: transparent;
+        }
+
+        /* Floating Animation */
+        @keyframes floatSlow {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-10px) rotate(1.5deg); }
+        }
+        .animate-float {
+            animation: floatSlow 5s ease-in-out infinite;
+        }
+
+        /* Pulse Glow */
+        @keyframes pulseNeon {
+            0%, 100% { box-shadow: 0 0 15px rgba(74, 163, 255, 0.4); }
+            50% { box-shadow: 0 0 30px rgba(255, 95, 162, 0.75); }
+        }
+        .pulse-neon {
+            animation: pulseNeon 3s infinite;
+        }
+
+        /* Drawing Canvas Styling */
+        .draw-surface {
+            background-color: var(--canvas-bg);
+            touch-action: none;
+            cursor: crosshair;
+            background-image: radial-gradient(rgba(74, 163, 255, 0.15) 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(15, 23, 42, 0.2);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: linear-gradient(180deg, #4aa3ff, #ff5fa2);
+            border-radius: 9999px;
+        }
+
+        /* Section Transition */
+        .app-section {
+            display: none;
+            animation: sectionFadeIn 0.45s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+        .app-section.active {
+            display: block;
+        }
+        @keyframes sectionFadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(18px) scale(0.985);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col selection:bg-cyber-pink selection:text-white">
+
+    <!-- Interactive 3D Three.js Background Canvas -->
+    <canvas id="bg-3d-canvas"></canvas>
+
+    <!-- Toast Notification Container (No alert() used anywhere) -->
+    <div id="toast-container" class="fixed bottom-5 left-5 z-50 flex flex-col gap-3 max-w-sm w-full pointer-events-none px-4 sm:px-0"></div>
+
+    <!-- Top Full-Width Spatial Navigation Header (Docked Flush at Top) -->
+    <header class="sticky top-0 inset-x-0 w-full z-50 spatial-glass rounded-none border-t-0 border-x-0 border-b border-slate-500/20">
+        <div class="w-full px-4 lg:px-8 h-16 lg:h-20 flex flex-nowrap items-center justify-between gap-2 xl:gap-4">
+            
+            <!-- Right: Brand Logo & Name -->
+            <div class="flex items-center gap-2.5 xl:gap-3 cursor-pointer shrink-0" onclick="switchSection('home')">
+                <div class="w-10 h-10 xl:w-11 xl:h-11 rounded-xl bg-gradient-to-tr from-cyber-blue via-cyber-purple to-cyber-pink flex items-center justify-center text-white shadow-lg pulse-neon shrink-0">
+                    <i class="fa-solid fa-cubes text-lg xl:text-xl"></i>
+                </div>
+                <div class="whitespace-nowrap">
+                    <div class="flex items-center gap-1.5 xl:gap-2">
+                        <h1 class="font-black text-base sm:text-lg xl:text-xl tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-cyber-blue via-purple-400 to-cyber-pink">
+                            نئون‌ورس ۲۰۲۷
+                        </h1>
+                        <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-cyber-green/20 text-cyber-green border border-cyber-green/40">
+                            AI 3D
+                        </span>
+                    </div>
+                    <p class="text-[11px] opacity-75 hidden xl:block">پلتفرم رقابتی طراحی هوشمند و نبرد سه‌بعدی</p>
+                </div>
+            </div>
+
+            <!-- Center: Main Navigation Pills (Single Horizontal Line on Desktop) -->
+            <nav class="hidden lg:flex items-center gap-1 xl:gap-1.5 bg-slate-900/10 dark:bg-white/5 p-1.5 rounded-xl border border-slate-500/10 whitespace-nowrap overflow-x-auto no-scrollbar">
+                <button onclick="switchSection('home')" id="nav-home" class="nav-pill active px-2.5 xl:px-3.5 py-2 rounded-lg text-xs xl:text-sm font-bold flex items-center gap-1.5 xl:gap-2 transition whitespace-nowrap">
+                    <i class="fa-solid fa-rocket"></i>
+                    <span>خانه سه‌بعدی</span>
+                </button>
+                <button onclick="switchSection('tournament')" id="nav-tournament" class="nav-pill px-2.5 xl:px-3.5 py-2 rounded-lg text-xs xl:text-sm font-bold flex items-center gap-1.5 xl:gap-2 hover:bg-white/10 transition whitespace-nowrap">
+                    <i class="fa-solid fa-paintbrush"></i>
+                    <span>مسابقه مدل هوشمند</span>
+                </button>
+                <button onclick="switchSection('aibattle')" id="nav-aibattle" class="nav-pill px-2.5 xl:px-3.5 py-2 rounded-lg text-xs xl:text-sm font-bold flex items-center gap-1.5 xl:gap-2 hover:bg-white/10 transition whitespace-nowrap">
+                    <i class="fa-solid fa-robot"></i>
+                    <span>مبارزه با هوش مصنوعی</span>
+                </button>
+                <button onclick="switchSection('leaderboard')" id="nav-leaderboard" class="nav-pill px-2.5 xl:px-3.5 py-2 rounded-lg text-xs xl:text-sm font-bold flex items-center gap-1.5 xl:gap-2 hover:bg-white/10 transition whitespace-nowrap">
+                    <i class="fa-solid fa-trophy"></i>
+                    <span>جدول امتیازات</span>
+                </button>
+                <button onclick="switchSection('comments')" id="nav-comments" class="nav-pill px-2.5 xl:px-3.5 py-2 rounded-lg text-xs xl:text-sm font-bold flex items-center gap-1.5 xl:gap-2 hover:bg-white/10 transition whitespace-nowrap">
+                    <i class="fa-solid fa-comments"></i>
+                    <span>نظرات</span>
+                </button>
+                <button onclick="switchSection('support')" id="nav-support" class="nav-pill px-2.5 xl:px-3.5 py-2 rounded-lg text-xs xl:text-sm font-bold flex items-center gap-1.5 xl:gap-2 hover:bg-white/10 transition whitespace-nowrap">
+                    <i class="fa-solid fa-headset"></i>
+                    <span>پشتیبانی</span>
+                </button>
+            </nav>
+
+            <!-- Left: User Status, Score, Sound & Dark/Day Mode Toggle (Single Row) -->
+            <div class="flex items-center gap-1.5 sm:gap-2 xl:gap-2.5 shrink-0 whitespace-nowrap">
+                <!-- Live User Score Badge -->
+                <div onclick="switchSection('leaderboard')" class="cursor-pointer px-2.5 xl:px-3 py-1.5 rounded-xl bg-gradient-to-r from-amber-500/20 to-orange-500/20 border border-amber-500/40 flex items-center gap-1.5 xl:gap-2 shrink-0" title="امتیاز کل شما در جدول مسابقه">
+                    <i class="fa-solid fa-star text-amber-400 animate-spin" style="animation-duration: 6s;"></i>
+                    <div class="text-xs">
+                        <span class="opacity-75 hidden sm:inline">امتیاز:</span>
+                        <span id="header-user-score" class="font-black text-xs xl:text-sm text-amber-500 dark:text-amber-400">۱۲۵۰</span>
+                    </div>
+                </div>
+
+                <!-- User / Guest Profile Button -->
+                <button onclick="switchSection('login')" id="header-user-btn" class="px-2.5 xl:px-3 py-1.5 rounded-xl bg-cyber-blue/15 hover:bg-cyber-blue/25 border border-cyber-blue/40 flex items-center gap-1.5 xl:gap-2 transition shrink-0">
+                    <span id="header-user-avatar" class="text-base">👾</span>
+                    <div class="text-right">
+                        <div id="header-user-name" class="text-xs font-extrabold leading-tight">کاربر مهمان</div>
+                        <div id="header-user-status" class="text-[10px] text-cyber-green font-semibold">حالت مهمان فعال</div>
+                    </div>
+                </button>
+
+                <!-- Sound Effects Toggle -->
+                <button onclick="toggleSound()" id="sound-toggle-btn" class="w-9 h-9 xl:w-10 xl:h-10 rounded-xl bg-slate-900/10 dark:bg-white/5 border border-slate-500/20 flex items-center justify-center hover:scale-105 transition shrink-0" title="صداهای سه‌بعدی سایبری">
+                    <i id="sound-icon" class="fa-solid fa-volume-high text-cyber-blue"></i>
+                </button>
+
+                <!-- Dark Mode / Day Mode Toggle Button -->
+                <button onclick="toggleTheme()" id="theme-toggle-btn" class="px-2.5 xl:px-3.5 py-2 rounded-xl bg-gradient-to-r from-slate-800 to-indigo-950 dark:from-amber-400 dark:to-orange-500 text-white dark:text-slate-950 font-bold text-xs flex items-center gap-1.5 xl:gap-2 shadow-lg hover:scale-105 transition shrink-0" title="تغییر حالت شب و روز">
+                    <i id="theme-icon" class="fa-solid fa-sun text-sm"></i>
+                    <span id="theme-label" class="hidden sm:inline">حالت روز</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Mobile & Tablet Full-Width Scrollable Navigation Strip -->
+        <div class="lg:hidden w-full px-3 py-2 border-t border-slate-500/15 bg-slate-900/10 dark:bg-black/20 flex items-center gap-1.5 overflow-x-auto no-scrollbar">
+            <button onclick="switchSection('home')" id="mnav-home" class="nav-pill active shrink-0 px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 whitespace-nowrap">
+                <i class="fa-solid fa-rocket"></i><span>خانه ۳بعدی</span>
+            </button>
+            <button onclick="switchSection('tournament')" id="mnav-tournament" class="nav-pill shrink-0 px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 whitespace-nowrap">
+                <i class="fa-solid fa-paintbrush"></i><span>مسابقه طراحی</span>
+            </button>
+            <button onclick="switchSection('aibattle')" id="mnav-aibattle" class="nav-pill shrink-0 px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 whitespace-nowrap">
+                <i class="fa-solid fa-robot"></i><span>مبارزه با AI</span>
+            </button>
+            <button onclick="switchSection('leaderboard')" id="mnav-leaderboard" class="nav-pill shrink-0 px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 whitespace-nowrap">
+                <i class="fa-solid fa-trophy"></i><span>جدول امتیازات</span>
+            </button>
+            <button onclick="switchSection('comments')" id="mnav-comments" class="nav-pill shrink-0 px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 whitespace-nowrap">
+                <i class="fa-solid fa-comments"></i><span>نظرات</span>
+            </button>
+            <button onclick="switchSection('support')" id="mnav-support" class="nav-pill shrink-0 px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 whitespace-nowrap">
+                <i class="fa-solid fa-headset"></i><span>پشتیبانی</span>
+            </button>
+            <button onclick="switchSection('login')" id="mnav-login" class="nav-pill shrink-0 px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 whitespace-nowrap">
+                <i class="fa-solid fa-user-astronaut"></i><span>ورود/مهمان</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- MAIN CONTENT CONTAINER -->
+    <main class="relative z-10 flex-1 max-w-7xl w-full mx-auto px-3 sm:px-6 py-6">
+
+        <!-- ==========================================
+             SECTION 1: 3D HOME & SPATIAL HUB (خانه)
+             ========================================== -->
+        <section id="section-home" class="app-section active space-y-8">
+            
+            <!-- Hero Spatial Banner -->
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
+                
+                <!-- Right Column: Hero Text & Quick Actions -->
+                <div class="lg:col-span-7 spatial-glass rounded-3xl p-6 sm:p-10 relative overflow-hidden">
+                    <div class="absolute -top-24 -left-24 w-64 h-64 bg-cyber-blue/20 rounded-full blur-3xl pointer-events-none"></div>
+                    <div class="absolute -bottom-24 -right-24 w-64 h-64 bg-cyber-pink/20 rounded-full blur-3xl pointer-events-none"></div>
+
+                    <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-cyber-blue/15 border border-cyber-blue/40 text-cyber-blue text-xs font-bold mb-5">
+                        <span class="w-2 h-2 rounded-full bg-cyber-green animate-ping"></span>
+                        <span>ترند متاورس و هوش مصنوعی ۲۰۲۷ • مدل CNN زنده</span>
+                    </div>
+
+                    <h2 class="text-3xl sm:text-5xl font-black leading-tight mb-4">
+                        طراحی کن، هوش مصنوعی را شکست بده و قهرمان
+                        <span class="bg-clip-text text-transparent bg-gradient-to-l from-cyber-blue via-cyber-purple to-cyber-pink">
+                            نئون‌ورس ۲۰۲۷
+                        </span>
+                        شو!
+                    </h2>
+
+                    <p class="text-sm sm:text-base opacity-80 leading-relaxed mb-6">
+                        در این دنیای سه‌بعدی زنده، با استفاده از شبکه عصبی کانولوشنی (CNN) آموزش‌دیده روی ۴ کلاس
+                        <span class="font-bold text-cyber-blue">«صورت»</span>،
+                        <span class="font-bold text-cyber-orange">«گل»</span>،
+                        <span class="font-bold text-cyber-green">«مثلث»</span> و
+                        <span class="font-bold text-cyber-pink">«مربع»</span>
+                        در مسابقات آنلاین شرکت کنید یا به صورت ۱ به ۱ با ربات هوشمند مسابقه دهید!
+                    </p>
+
+                    <!-- Primary Action Buttons -->
+                    <div class="flex flex-wrap items-center gap-3.5">
+                        <button onclick="switchSection('tournament')" class="neon-btn px-6 py-3.5 rounded-2xl bg-gradient-to-r from-cyber-blue via-indigo-500 to-cyber-purple text-white font-black text-sm sm:text-base flex items-center gap-2.5 shadow-xl">
+                            <i class="fa-solid fa-bolt"></i>
+                            <span>ورود به میدان مسابقه (کسب امتیاز)</span>
+                        </button>
+                        <button onclick="switchSection('aibattle')" class="neon-btn px-6 py-3.5 rounded-2xl bg-gradient-to-r from-cyber-pink to-cyber-orange text-white font-black text-sm sm:text-base flex items-center gap-2.5 shadow-xl">
+                            <i class="fa-solid fa-robot"></i>
+                            <span>مبارزه مستقیم با هوش مصنوعی</span>
+                        </button>
+                    </div>
+
+                    <!-- Mini Live Stats Row -->
+                    <div class="grid grid-cols-3 gap-3 mt-8 pt-6 border-t border-slate-500/20">
+                        <div>
+                            <div class="text-xl sm:text-2xl font-black text-cyber-blue">۲۸×۲۸</div>
+                            <div class="text-xs opacity-75">دقت شبکه عصبی CNN</div>
+                        </div>
+                        <div>
+                            <div class="text-xl sm:text-2xl font-black text-cyber-green">+۱۵۰ تا ۳۵۰</div>
+                            <div class="text-xs opacity-75">امتیاز هر پیروزی در جدول</div>
+                        </div>
+                        <div>
+                            <div class="text-xl sm:text-2xl font-black text-cyber-pink">۶۰ FPS</div>
+                            <div class="text-xs opacity-75">موتور سه‌بعدی تعاملی</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Left Column: Interactive 3D Object Showcase Controller -->
+                <div class="lg:col-span-5 spatial-glass rounded-3xl p-6 flex flex-col justify-between relative overflow-hidden min-h-[370px]">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-bold px-3 py-1 rounded-full bg-cyber-purple/20 text-cyber-purple border border-cyber-purple/40">
+                            <i class="fa-solid fa-cube ml-1"></i>کنترلر فضای سه‌بعدی زنده
+                        </span>
+                        <span class="text-xs opacity-70">ماوس را حرکت دهید یا کلیک کنید</span>
+                    </div>
+
+                    <!-- Center Interactive 3D Hologram Preview Overlay -->
+                    <div class="my-auto py-8 text-center">
+                        <div class="inline-block p-5 rounded-full bg-gradient-to-tr from-cyber-blue/20 via-cyber-purple/20 to-cyber-pink/20 border border-white/15 animate-float mb-3">
+                            <i id="hero-3d-icon" class="fa-solid fa-wand-magic-sparkles text-5xl text-cyber-blue"></i>
+                        </div>
+                        <h3 id="hero-3d-title" class="text-xl font-black mb-1">اشکال سه‌بعدی مدل هوش مصنوعی</h3>
+                        <p class="text-xs opacity-75 max-w-xs mx-auto">
+                            اجسام سه‌بعدی در پس‌زمینه نماینده ۴ کلاس مدل شبکه عصبی شما هستند. با دکمه‌های زیر شکل سه‌بعدی اصلی را تغییر دهید:
+                        </p>
+                    </div>
+
+                    <!-- 3D Mode Switcher Buttons -->
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                        <button onclick="focus3DShape(0)" class="p-2.5 rounded-xl bg-cyber-blue/15 hover:bg-cyber-blue/30 border border-cyber-blue/40 text-xs font-bold flex flex-col items-center gap-1 transition">
+                            <span class="text-lg">😊</span>
+                            <span class="text-cyber-blue">صورت ۳بعدی</span>
+                        </button>
+                        <button onclick="focus3DShape(1)" class="p-2.5 rounded-xl bg-cyber-orange/15 hover:bg-cyber-orange/30 border border-cyber-orange/40 text-xs font-bold flex flex-col items-center gap-1 transition">
+                            <span class="text-lg">🌸</span>
+                            <span class="text-cyber-orange">گل نئونی</span>
+                        </button>
+                        <button onclick="focus3DShape(2)" class="p-2.5 rounded-xl bg-cyber-green/15 hover:bg-cyber-green/30 border border-cyber-green/40 text-xs font-bold flex flex-col items-center gap-1 transition">
+                            <span class="text-lg">🔺</span>
+                            <span class="text-cyber-green">هرم مثلثی</span>
+                        </button>
+                        <button onclick="focus3DShape(3)" class="p-2.5 rounded-xl bg-cyber-pink/15 hover:bg-cyber-pink/30 border border-cyber-pink/40 text-xs font-bold flex flex-col items-center gap-1 transition">
+                            <span class="text-lg">🟦</span>
+                            <span class="text-cyber-pink">مکعب مربع</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 2027 Bento Grid: Separate Sections Preview Cards (with 3D Tilt) -->
+            <div>
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-xl font-black flex items-center gap-2">
+                        <i class="fa-solid fa-layer-group text-cyber-blue"></i>
+                        <span>بخش‌های اختصاصی پلتفرم نئون‌ورس</span>
+                    </h3>
+                    <span class="text-xs opacity-70">هر بخش دارای محیط کاملاً مستقل و تعاملی است</span>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                    
+                    <!-- Card 1: Model Tournament -->
+                    <div onclick="switchSection('tournament')" class="tilt-card spatial-glass rounded-2xl p-6 cursor-pointer group hover:border-cyber-blue/60">
+                        <div class="tilt-card-inner">
+                            <div class="w-12 h-12 rounded-2xl bg-cyber-blue/20 border border-cyber-blue/40 flex items-center justify-center text-cyber-blue text-2xl mb-4 group-hover:scale-110 transition">
+                                <i class="fa-solid fa-brain"></i>
+                            </div>
+                            <h4 class="text-lg font-black mb-2">۱. مسابقه مردمی با مدل CNN</h4>
+                            <p class="text-xs opacity-75 leading-relaxed mb-4">
+                                مسابقه سرعت و دقت نقاشی روی ۴ کلاس مدل (صورت، گل، مثلث، مربع). هر پیروزی ۱۵۰+ امتیاز به حساب شما در جدول اضافه می‌کند.
+                            </p>
+                            <span class="text-xs font-bold text-cyber-blue flex items-center gap-1">
+                                ورود به بخش مسابقه <i class="fa-solid fa-arrow-left text-[10px]"></i>
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Card 2: AI Battle -->
+                    <div onclick="switchSection('aibattle')" class="tilt-card spatial-glass rounded-2xl p-6 cursor-pointer group hover:border-cyber-pink/60">
+                        <div class="tilt-card-inner">
+                            <div class="w-12 h-12 rounded-2xl bg-cyber-pink/20 border border-cyber-pink/40 flex items-center justify-center text-cyber-pink text-2xl mb-4 group-hover:scale-110 transition">
+                                <i class="fa-solid fa-swords"></i>
+                            </div>
+                            <h4 class="text-lg font-black mb-2">۲. مبارزه ۱ به ۱ با هوش مصنوعی</h4>
+                            <p class="text-xs opacity-75 leading-relaxed mb-4">
+                                دو بوم نقاشی همزمان! شما و ربات «نئون-X» به طور زنده یک شکل را می‌کشید؛ هر کس زودتر توسط شبکه عصبی تایید شود برنده ۲۰۰+ امتیاز است.
+                            </p>
+                            <span class="text-xs font-bold text-cyber-pink flex items-center gap-1">
+                                شروع دوئل با ربات <i class="fa-solid fa-arrow-left text-[10px]"></i>
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Card 3: Leaderboard -->
+                    <div onclick="switchSection('leaderboard')" class="tilt-card spatial-glass rounded-2xl p-6 cursor-pointer group hover:border-amber-400/60">
+                        <div class="tilt-card-inner">
+                            <div class="w-12 h-12 rounded-2xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400 text-2xl mb-4 group-hover:scale-110 transition">
+                                <i class="fa-solid fa-ranking-star"></i>
+                            </div>
+                            <h4 class="text-lg font-black mb-2">۳. جدول امتیازات زنده</h4>
+                            <p class="text-xs opacity-75 leading-relaxed mb-4">
+                                رده‌بندی بازیکنان برتر ایران با امتیازدهی خودکار بعد از هر برد. حتی در حالت «مهمان» هم نام و رتبه شما در جدول ثبت و ارتقا می‌یابد.
+                            </p>
+                            <span class="text-xs font-bold text-amber-400 flex items-center gap-1">
+                                مشاهده جدول رده‌بندی <i class="fa-solid fa-arrow-left text-[10px]"></i>
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Card 4: User Reviews -->
+                    <div onclick="switchSection('comments')" class="tilt-card spatial-glass rounded-2xl p-6 cursor-pointer group hover:border-cyber-green/60">
+                        <div class="tilt-card-inner">
+                            <div class="w-12 h-12 rounded-2xl bg-cyber-green/20 border border-cyber-green/40 flex items-center justify-center text-cyber-green text-2xl mb-4 group-hover:scale-110 transition">
+                                <i class="fa-solid fa-message"></i>
+                            </div>
+                            <h4 class="text-lg font-black mb-2">۴. باشگاه نظرات گیمرها</h4>
+                            <p class="text-xs opacity-75 leading-relaxed mb-4">
+                                تجربه سایر بازیکنان را بخوانید، نظرات را لایک کنید و دیدگاه و امتیاز ۵ ستاره خودتان را به صورت زنده ثبت کنید.
+                            </p>
+                            <span class="text-xs font-bold text-cyber-green flex items-center gap-1">
+                                مطالعه و ثبت نظر <i class="fa-solid fa-arrow-left text-[10px]"></i>
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Card 5: 24/7 Support -->
+                    <div onclick="switchSection('support')" class="tilt-card spatial-glass rounded-2xl p-6 cursor-pointer group hover:border-cyber-orange/60">
+                        <div class="tilt-card-inner">
+                            <div class="w-12 h-12 rounded-2xl bg-cyber-orange/20 border border-cyber-orange/40 flex items-center justify-center text-cyber-orange text-2xl mb-4 group-hover:scale-110 transition">
+                                <i class="fa-solid fa-headset"></i>
+                            </div>
+                            <h4 class="text-lg font-black mb-2">۵. پشتیبانی آنلاین و چت هوشمند</h4>
+                            <p class="text-xs opacity-75 leading-relaxed mb-4">
+                                چت‌بات پاسخگوی فوری، سیستم ثبت تیکت پشتیبانی با کد رهگیری و راهنمای کامل نحوه کارکرد مدل هوش مصنوعی.
+                            </p>
+                            <span class="text-xs font-bold text-cyber-orange flex items-center gap-1">
+                                ارتباط با پشتیبانی <i class="fa-solid fa-arrow-left text-[10px]"></i>
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Card 6: Login / Guest System -->
+                    <div onclick="switchSection('login')" class="tilt-card spatial-glass rounded-2xl p-6 cursor-pointer group hover:border-cyber-purple/60">
+                        <div class="tilt-card-inner">
+                            <div class="w-12 h-12 rounded-2xl bg-cyber-purple/20 border border-cyber-purple/40 flex items-center justify-center text-cyber-purple text-2xl mb-4 group-hover:scale-110 transition">
+                                <i class="fa-solid fa-user-shield"></i>
+                            </div>
+                            <h4 class="text-lg font-black mb-2">۶. ورود یا بازی به عنوان مهمان</h4>
+                            <p class="text-xs opacity-75 leading-relaxed mb-4">
+                                بدون نیاز به ثبت‌نام اجباری به عنوان «کاربر مهمان» بازی کنید یا با نام دلخواه و آواتار سه‌بعدی خودتان وارد شوید.
+                            </p>
+                            <span class="text-xs font-bold text-cyber-purple flex items-center gap-1">
+                                مدیریت حساب کاربری <i class="fa-solid fa-arrow-left text-[10px]"></i>
+                            </span>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </section>
+
+        <!-- ==============================================================
+             SECTION 2: TOURNAMENT WITH PROVIDED CNN MODEL (مسابقه مردمی)
+             ============================================================== -->
+        <section id="section-tournament" class="app-section space-y-6">
+            
+            <!-- Tournament Top Header -->
+            <div class="spatial-glass rounded-3xl p-5 sm:p-6 flex flex-wrap items-center justify-between gap-4">
+                <div>
+                    <div class="flex items-center gap-2">
+                        <span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-cyber-blue/20 text-cyber-blue border border-cyber-blue/40">
+                            CNN Architecture • 28x28 Centered
+                        </span>
+                        <span id="model-status-badge" class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-cyber-green/20 text-cyber-green border border-cyber-green/40">
+                            <i class="fa-solid fa-circle-check ml-1"></i>وزن‌های مدل draw-model.json فعال است
+                        </span>
+                    </div>
+                    <h2 class="text-2xl sm:text-3xl font-black mt-1">میدان مسابقه طراحی هوشمند</h2>
+                    <p class="text-xs sm:text-sm opacity-75">
+                        شکل هدف را روی بوم بکشید؛ شبکه عصبی کانولوشنی در لحظه نقاشی شما را تحلیل کرده و به هر پیروزی امتیاز می‌دهد!
+                    </p>
+                </div>
+
+                <!-- Tournament Score & Round Controls -->
+                <div class="flex flex-wrap items-center gap-3">
+                    <div class="px-4 py-2 rounded-2xl bg-slate-900/20 dark:bg-white/5 border border-slate-500/20 text-center">
+                        <div class="text-[11px] opacity-70">بردهای شما</div>
+                        <div id="tour-wins-count" class="text-lg font-black text-cyber-green">۳</div>
+                    </div>
+                    <div class="px-4 py-2 rounded-2xl bg-slate-900/20 dark:bg-white/5 border border-slate-500/20 text-center">
+                        <div class="text-[11px] opacity-70">زمان باقی‌مانده</div>
+                        <div id="tour-timer" class="text-lg font-black text-cyber-orange">۲۰s</div>
+                    </div>
+                    <button onclick="startNewTournamentRound()" class="neon-btn px-5 py-3 rounded-2xl bg-gradient-to-r from-cyber-blue to-cyber-purple text-white font-bold text-sm flex items-center gap-2 shadow-lg">
+                        <i class="fa-solid fa-play"></i>
+                        <span>چالش جدید (+۱۵۰ امتیاز)</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Main Tournament Arena Grid -->
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                
+                <!-- Right/Center: Drawing Canvas & Target Prompt -->
+                <div class="lg:col-span-7 spatial-glass rounded-3xl p-5 sm:p-6 flex flex-col justify-between">
+                    
+                    <!-- Target Banner -->
+                    <div class="p-4 rounded-2xl bg-gradient-to-r from-cyber-blue/15 via-cyber-purple/15 to-cyber-pink/15 border border-cyber-blue/30 flex flex-wrap items-center justify-between gap-3 mb-4">
+                        <div class="flex items-center gap-3">
+                            <div id="tour-target-icon" class="w-12 h-12 rounded-2xl bg-cyber-blue/20 flex items-center justify-center text-2xl">
+                                😊
+                            </div>
+                            <div>
+                                <div class="text-xs opacity-75">هدف این دور مسابقه:</div>
+                                <div class="text-lg sm:text-xl font-black">
+                                    لطفاً یک <span id="tour-target-name" class="text-cyber-blue underline decoration-wavy">صورت</span> بکشید!
+                                </div>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="text-xs opacity-75">هدف بعدی:</span>
+                            <button onclick="setSpecificTarget(0)" class="px-2.5 py-1 rounded-lg text-xs font-bold bg-[#4aa3ff]/20 text-[#4aa3ff] border border-[#4aa3ff]/40 hover:scale-105 transition">صورت</button>
+                            <button onclick="setSpecificTarget(1)" class="px-2.5 py-1 rounded-lg text-xs font-bold bg-[#ff8a1f]/20 text-[#ff8a1f] border border-[#ff8a1f]/40 hover:scale-105 transition">گل</button>
+                            <button onclick="setSpecificTarget(2)" class="px-2.5 py-1 rounded-lg text-xs font-bold bg-[#6ee7a8]/20 text-[#6ee7a8] border border-[#6ee7a8]/40 hover:scale-105 transition">مثلث</button>
+                            <button onclick="setSpecificTarget(3)" class="px-2.5 py-1 rounded-lg text-xs font-bold bg-[#ff5fa2]/20 text-[#ff5fa2] border border-[#ff5fa2]/40 hover:scale-105 transition">مربع</button>
+                        </div>
+                    </div>
+
+                    <!-- Drawing Canvas Wrapper -->
+                    <div class="relative w-full aspect-square max-h-[380px] mx-auto rounded-2xl overflow-hidden border-2 border-cyber-blue/40 shadow-inner">
+                        <canvas id="tour-canvas" width="380" height="380" class="draw-surface w-full h-full block"></canvas>
+                        
+                        <!-- Victory Overlay inside Canvas -->
+                        <div id="tour-win-overlay" class="hidden absolute inset-0 bg-slate-950/85 backdrop-blur-md flex flex-col items-center justify-center text-center p-6 z-20">
+                            <div class="w-16 h-16 rounded-full bg-cyber-green/20 border-2 border-cyber-green flex items-center justify-center text-cyber-green text-3xl mb-3 animate-bounce">
+                                <i class="fa-solid fa-trophy"></i>
+                            </div>
+                            <h3 class="text-2xl font-black text-white mb-1">آفرین! تشخیص دقیق هوش مصنوعی</h3>
+                            <p id="tour-win-detail" class="text-sm text-cyber-green font-bold mb-5">+۱۸۰ امتیاز به جدول رده‌بندی شما اضافه شد!</p>
+                            <button onclick="startNewTournamentRound()" class="neon-btn px-6 py-3 rounded-xl bg-gradient-to-r from-cyber-green to-emerald-500 text-slate-950 font-black text-sm">
+                                مرحله بعدی مسابقه <i class="fa-solid fa-arrow-left mr-1"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Canvas Toolbar -->
+                    <div class="flex flex-wrap items-center justify-between gap-3 mt-4 pt-3 border-t border-slate-500/20">
+                        <div class="flex items-center gap-2">
+                            <button onclick="clearTournamentCanvas()" class="px-4 py-2 rounded-xl bg-rose-500/15 hover:bg-rose-500/25 text-rose-400 border border-rose-500/30 text-xs font-bold flex items-center gap-1.5 transition">
+                                <i class="fa-solid fa-trash-can"></i><span>پاک کردن بوم</span>
+                            </button>
+                            <button onclick="drawHintTemplate()" class="px-3.5 py-2 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 text-amber-400 border border-amber-500/30 text-xs font-bold flex items-center gap-1.5 transition" title="نمونه راهنما">
+                                <i class="fa-solid fa-lightbulb"></i><span>راهنمای رسم</span>
+                            </button>
+                        </div>
+
+                        <div class="flex items-center gap-2">
+                            <span class="text-xs opacity-75">ضخامت قلم:</span>
+                            <input id="tour-brush-size" type="range" min="8" max="26" value="16" class="w-24 accent-cyber-blue cursor-pointer">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Left: Real-time CNN Model Output, 28x28 Tensor Preview & JSON Loader -->
+                <div class="lg:col-span-5 space-y-5">
+                    
+                    <!-- Live Probability Bars Card -->
+                    <div class="spatial-glass rounded-3xl p-5 sm:p-6">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="font-black text-base flex items-center gap-2">
+                                <i class="fa-solid fa-chart-simple text-cyber-blue"></i>
+                                <span>خروجی زنده شبکه عصبی (۴ کلاس)</span>
+                            </h3>
+                            <span id="top-prediction-badge" class="text-xs font-black px-2.5 py-1 rounded-lg bg-white/10">
+                                در انتظار رسم...
+                            </span>
+                        </div>
+
+                        <!-- 4 Classes Bars matching draw-model.json colors -->
+                        <div class="space-y-4">
+                            <!-- Class 0: صورت (#4aa3ff) -->
+                            <div>
+                                <div class="flex justify-between text-xs font-bold mb-1">
+                                    <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-full inline-block" style="background:#4aa3ff"></span> 😊 صورت (Face)</span>
+                                    <span id="prob-val-0" style="color:#4aa3ff">0%</span>
+                                </div>
+                                <div class="w-full h-3 rounded-full bg-slate-900/30 dark:bg-white/10 overflow-hidden">
+                                    <div id="prob-bar-0" class="h-full rounded-full transition-all duration-150" style="width: 0%; background: #4aa3ff;"></div>
+                                </div>
+                            </div>
+
+                            <!-- Class 1: گل (#ff8a1f) -->
+                            <div>
+                                <div class="flex justify-between text-xs font-bold mb-1">
+                                    <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-full inline-block" style="background:#ff8a1f"></span> 🌸 گل (Flower)</span>
+                                    <span id="prob-val-1" style="color:#ff8a1f">0%</span>
+                                </div>
+                                <div class="w-full h-3 rounded-full bg-slate-900/30 dark:bg-white/10 overflow-hidden">
+                                    <div id="prob-bar-1" class="h-full rounded-full transition-all duration-150" style="width: 0%; background: #ff8a1f;"></div>
+                                </div>
+                            </div>
+
+                            <!-- Class 2: مثلث (#6ee7a8) -->
+                            <div>
+                                <div class="flex justify-between text-xs font-bold mb-1">
+                                    <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-full inline-block" style="background:#6ee7a8"></span> 🔺 مثلث (Triangle)</span>
+                                    <span id="prob-val-2" style="color:#6ee7a8">0%</span>
+                                </div>
+                                <div class="w-full h-3 rounded-full bg-slate-900/30 dark:bg-white/10 overflow-hidden">
+                                    <div id="prob-bar-2" class="h-full rounded-full transition-all duration-150" style="width: 0%; background: #6ee7a8;"></div>
+                                </div>
+                            </div>
+
+                            <!-- Class 3: مربع (#ff5fa2) -->
+                            <div>
+                                <div class="flex justify-between text-xs font-bold mb-1">
+                                    <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-full inline-block" style="background:#ff5fa2"></span> 🟦 مربع (Square)</span>
+                                    <span id="prob-val-3" style="color:#ff5fa2">0%</span>
+                                </div>
+                                <div class="w-full h-3 rounded-full bg-slate-900/30 dark:bg-white/10 overflow-hidden">
+                                    <div id="prob-bar-3" class="h-full rounded-full transition-all duration-150" style="width: 0%; background: #ff5fa2;"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Manual Submit Button in case user wants instant evaluation -->
+                        <button onclick="evaluateAndClaimTournamentWin()" class="w-full mt-5 py-3 rounded-xl bg-cyber-green/20 hover:bg-cyber-green/30 text-cyber-green border border-cyber-green/40 font-black text-xs transition flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-check-double"></i>
+                            <span>تایید نهایی نقاشی و ثبت امتیاز در جدول</span>
+                        </button>
+                    </div>
+
+                    <!-- 28x28 Centered Tensor Inspector & Custom JSON Uploader -->
+                    <div class="spatial-glass rounded-3xl p-5">
+                        <div class="flex items-center gap-4">
+                            <div class="shrink-0 text-center">
+                                <div class="text-[10px] opacity-70 mb-1">ورودی ۲۸×۲۸ مدل</div>
+                                <canvas id="tensor-28-canvas" width="28" height="28" class="w-20 h-20 rounded-xl border border-cyber-blue/50 bg-black mx-auto" style="image-rendering: pixelated;"></canvas>
+                            </div>
+                            <div class="flex-1 text-xs space-y-1.5">
+                                <div class="font-black text-cyber-blue">مشخصات مدل CNN تعبیه‌شده:</div>
+                                <p class="opacity-75 text-[11px] leading-relaxed">
+                                    معماری: <code>Conv(8,3x3) → Pool → Conv(16,3x3) → Pool → Dense(784→64→4)</code> با نرمال‌سازی مرکزی (<code>center: true, size: 28</code>).
+                                </p>
+                                <div class="pt-1 flex flex-wrap items-center gap-2">
+                                    <label class="cursor-pointer px-3 py-1.5 rounded-lg bg-cyber-purple/20 hover:bg-cyber-purple/30 text-cyber-purple border border-cyber-purple/40 font-bold text-[11px] inline-flex items-center gap-1.5 transition">
+                                        <i class="fa-solid fa-file-import"></i>
+                                        <span>بارگذاری فایل draw-model.json</span>
+                                        <input type="file" accept=".json" class="hidden" onchange="handleCustomModelUpload(event)">
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </section>
+
+        <!-- ==============================================================
+             SECTION 3: AI BATTLE (مبارزه کاربر با هوش مصنوعی)
+             ============================================================== -->
+        <section id="section-aibattle" class="app-section space-y-6">
+            
+            <!-- AI Battle Header & Difficulty Selector -->
+            <div class="spatial-glass rounded-3xl p-5 sm:p-6 flex flex-wrap items-center justify-between gap-4">
+                <div>
+                    <div class="inline-flex items-center gap-2 px-3 py-0.5 rounded-full text-xs font-bold bg-cyber-pink/20 text-cyber-pink border border-cyber-pink/40 mb-1">
+                        <i class="fa-solid fa-bolt-lightning"></i>
+                        <span>نبرد همزمان ۱ به ۱ • انسان در برابر هوش مصنوعی</span>
+                    </div>
+                    <h2 class="text-2xl sm:text-3xl font-black">مبارزه زنده با ربات «نئون-X»</h2>
+                    <p class="text-xs sm:text-sm opacity-75">
+                        هر دو همزمان شکل هدف را می‌کشید! هر کس زودتر دقت مدل را به بالای ۸۰٪ برساند برنده دوئل و ۲۰۰+ امتیاز می‌شود.
+                    </p>
+                </div>
+
+                <!-- Difficulty & Start Duel Controls -->
+                <div class="flex flex-wrap items-center gap-3">
+                    <select id="ai-difficulty" class="px-3.5 py-2.5 rounded-xl spatial-glass text-xs font-bold focus:outline-none border border-cyber-pink/40">
+                        <option value="easy" class="bg-slate-900 text-white">سطح ربات: آسان (+۱۵۰ امتیاز)</option>
+                        <option value="medium" selected class="bg-slate-900 text-white">سطح ربات: متوسط (+۲۲۰ امتیاز)</option>
+                        <option value="hard" class="bg-slate-900 text-white">سطح ربات: پیشرفته ۲۰۲۷ (+۳۵۰ امتیاز)</option>
+                    </select>
+
+                    <button onclick="startAIBattle()" id="start-ai-battle-btn" class="neon-btn px-6 py-3 rounded-2xl bg-gradient-to-r from-cyber-pink to-cyber-orange text-white font-black text-sm flex items-center gap-2 shadow-xl">
+                        <i class="fa-solid fa-play"></i>
+                        <span>شروع مبارزه جدید</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Battle Status Banner -->
+            <div class="spatial-glass rounded-2xl p-4 flex flex-wrap items-center justify-between gap-4 border-2 border-cyber-pink/40">
+                <div class="flex items-center gap-3">
+                    <span class="text-xs font-bold opacity-75">شکل هدف مسابقه:</span>
+                    <span id="battle-target-badge" class="px-4 py-1.5 rounded-xl bg-cyber-blue/20 text-cyber-blue border border-cyber-blue/40 font-black text-base">
+                        🌸 گل (Flower)
+                    </span>
+                </div>
+
+                <div id="battle-status-text" class="text-sm font-black text-amber-400 animate-pulse">
+                    برای شروع دوئل روی دکمه «شروع مبارزه جدید» کلیک کنید!
+                </div>
+
+                <div class="flex items-center gap-4">
+                    <div class="text-xs font-bold">
+                        زمان دوئل: <span id="battle-timer" class="text-base font-black text-cyber-pink">۱۵s</span>
+                    </div>
+                    <div class="text-xs font-bold">
+                        نتیجه کل: <span id="battle-score-summary" class="text-cyber-green font-black">شما ۱ - ۰ هوش مصنوعی</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Split Screen Canvases: Player vs AI -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                
+                <!-- Right Side: Human Player Canvas -->
+                <div class="spatial-glass rounded-3xl p-5 border-2 border-cyber-blue/40 flex flex-col">
+                    <div class="flex items-center justify-between mb-3">
+                        <div class="flex items-center gap-2">
+                            <span id="battle-user-avatar" class="text-xl">👾</span>
+                            <div>
+                                <h3 id="battle-user-title" class="font-black text-sm">بوم طراحی شما (کاربر مهمان)</h3>
+                                <span class="text-[11px] text-cyber-blue">با ماوس یا لمس صفحه سریع بکشید</span>
+                            </div>
+                        </div>
+                        <div class="text-left">
+                            <div class="text-[10px] opacity-70">تشخیص مدل برای شما</div>
+                            <div id="battle-user-conf" class="text-lg font-black text-cyber-blue">۰٪</div>
+                        </div>
+                    </div>
+
+                    <!-- User Progress Bar -->
+                    <div class="w-full h-2.5 rounded-full bg-slate-900/30 dark:bg-white/10 overflow-hidden mb-4">
+                        <div id="battle-user-bar" class="h-full bg-gradient-to-r from-cyber-blue to-cyber-green transition-all duration-150" style="width: 0%"></div>
+                    </div>
+
+                    <div class="relative w-full aspect-square max-h-[330px] mx-auto rounded-2xl overflow-hidden border border-cyber-blue/30">
+                        <canvas id="battle-user-canvas" width="330" height="330" class="draw-surface w-full h-full block"></canvas>
+                    </div>
+
+                    <div class="flex items-center justify-between mt-4">
+                        <button onclick="clearBattleUserCanvas()" class="px-3.5 py-1.5 rounded-xl bg-rose-500/15 text-rose-400 border border-rose-500/30 text-xs font-bold">
+                            <i class="fa-solid fa-eraser ml-1"></i>پاک کردن بوم من
+                        </button>
+                        <button onclick="finishBattleEarlyCheck()" class="px-4 py-1.5 rounded-xl bg-cyber-green/20 text-cyber-green border border-cyber-green/40 text-xs font-bold">
+                            <i class="fa-solid fa-flag-checkered ml-1"></i>ثبت زودهنگام طرح
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Left Side: AI Opponent Canvas -->
+                <div class="spatial-glass rounded-3xl p-5 border-2 border-cyber-pink/40 flex flex-col">
+                    <div class="flex items-center justify-between mb-3">
+                        <div class="flex items-center gap-2">
+                            <span class="w-9 h-9 rounded-xl bg-cyber-pink/20 border border-cyber-pink/40 flex items-center justify-center text-cyber-pink">
+                                <i class="fa-solid fa-robot"></i>
+                            </span>
+                            <div>
+                                <h3 class="font-black text-sm">ربات هوش مصنوعی «نئون-X»</h3>
+                                <span id="ai-thinking-status" class="text-[11px] text-cyber-pink">آماده شروع رقابت...</span>
+                            </div>
+                        </div>
+                        <div class="text-left">
+                            <div class="text-[10px] opacity-70">تشخیص مدل برای ربات</div>
+                            <div id="battle-ai-conf" class="text-lg font-black text-cyber-pink">۰٪</div>
+                        </div>
+                    </div>
+
+                    <!-- AI Progress Bar -->
+                    <div class="w-full h-2.5 rounded-full bg-slate-900/30 dark:bg-white/10 overflow-hidden mb-4">
+                        <div id="battle-ai-bar" class="h-full bg-gradient-to-r from-cyber-pink to-cyber-orange transition-all duration-150" style="width: 0%"></div>
+                    </div>
+
+                    <div class="relative w-full aspect-square max-h-[330px] mx-auto rounded-2xl overflow-hidden border border-cyber-pink/30">
+                        <canvas id="battle-ai-canvas" width="330" height="330" class="draw-surface w-full h-full block pointer-events-none"></canvas>
+                    </div>
+
+                    <div class="flex items-center justify-between mt-4 text-xs opacity-75">
+                        <span><i class="fa-solid fa-microchip text-cyber-pink ml-1"></i>موتور رسم برداری خودکار ۲۰۲۷</span>
+                        <span id="ai-speed-label">سرعت رسم: استاندارد</span>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- ==============================================================
+             SECTION 4: LEADERBOARD (جدول مسابقه و امتیازات)
+             ============================================================== -->
+        <section id="section-leaderboard" class="app-section space-y-6">
+            
+            <div class="spatial-glass rounded-3xl p-6 flex flex-wrap items-center justify-between gap-4">
+                <div>
+                    <span class="px-3 py-0.5 rounded-full text-xs font-bold bg-amber-500/20 text-amber-400 border border-amber-500/40">
+                        <i class="fa-solid fa-crown ml-1"></i>لیگ سراسری نئون‌ورس ۲۰۲۷
+                    </span>
+                    <h2 class="text-2xl sm:text-3xl font-black mt-1">جدول امتیازات و رده‌بندی مسابقه</h2>
+                    <p class="text-xs sm:text-sm opacity-75">
+                        هر پیروزی در بخش «مسابقه مدل» یا «مبارزه با هوش مصنوعی» امتیاز شما را به صورت آنی در این جدول افزایش می‌دهد.
+                    </p>
+                </div>
+
+                <div class="flex items-center gap-3">
+                    <button onclick="switchSection('tournament')" class="px-4 py-2.5 rounded-xl bg-cyber-blue/20 hover:bg-cyber-blue/30 text-cyber-blue border border-cyber-blue/40 text-xs font-bold transition">
+                        <i class="fa-solid fa-plus ml-1"></i>کسب امتیاز بیشتر
+                    </button>
+                </div>
+            </div>
+
+            <!-- Top 3 Podium Cards -->
+            <div id="leaderboard-podium" class="grid grid-cols-1 md:grid-cols-3 gap-4"></div>
+
+            <!-- Full Leaderboard Table -->
+            <div class="spatial-glass rounded-3xl overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-right text-sm">
+                        <thead class="bg-slate-900/15 dark:bg-white/5 text-xs uppercase border-b border-slate-500/20">
+                            <tr>
+                                <th class="py-4 px-5">رتبه</th>
+                                <th class="py-4 px-5">بازیکن</th>
+                                <th class="py-4 px-5">لقب / سطح</th>
+                                <th class="py-4 px-5">تعداد پیروزی</th>
+                                <th class="py-4 px-5">تخصص طراحی</th>
+                                <th class="py-4 px-5 text-left">امتیاز کل</th>
+                            </tr>
+                        </thead>
+                        <tbody id="leaderboard-tbody" class="divide-y divide-slate-500/15">
+                            <!-- Populated dynamically by JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==============================================================
+             SECTION 5: USER COMMENTS & REVIEWS (بخش نظرات)
+             ============================================================== -->
+        <section id="section-comments" class="app-section space-y-6">
+            
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                
+                <!-- Right Column: Submit New Comment Form -->
+                <div class="lg:col-span-4 spatial-glass rounded-3xl p-6 h-fit">
+                    <h3 class="text-xl font-black mb-2 flex items-center gap-2">
+                        <i class="fa-solid fa-pen-nib text-cyber-green"></i>
+                        <span>ثبت نظر جدید</span>
+                    </h3>
+                    <p class="text-xs opacity-75 mb-4">
+                        نظر شما با نام فعلی‌تان (<span id="comment-form-username" class="font-bold text-cyber-blue">کاربر مهمان</span>) در لیست نظرات منتشر می‌شود.
+                    </p>
+
+                    <form onsubmit="submitUserComment(event)" class="space-y-4">
+                        <div>
+                            <label class="text-xs font-bold block mb-1.5">امتیاز شما به سایت:</label>
+                            <div class="flex items-center gap-2" id="star-rating-selector">
+                                <button type="button" onclick="setCommentStars(5)" class="px-3 py-1.5 rounded-xl bg-amber-500/20 text-amber-400 border border-amber-500/40 text-xs font-bold">⭐⭐⭐⭐⭐ عالی (۵)</button>
+                                <button type="button" onclick="setCommentStars(4)" class="px-2.5 py-1.5 rounded-xl bg-white/5 text-xs">⭐⭐⭐⭐ (۴)</button>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="text-xs font-bold block mb-1.5">بخش مورد علاقه:</label>
+                            <select id="comment-category" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-900/10 dark:bg-white/5 border border-slate-500/30 text-xs font-bold focus:outline-none">
+                                <option value="مبارزه با هوش مصنوعی" class="bg-slate-900 text-white">مبارزه با هوش مصنوعی</option>
+                                <option value="مسابقه مدل CNN" class="bg-slate-900 text-white">مسابقه مدل CNN</option>
+                                <option value="گرافیک سه‌بعدی ۲۰۲۷" class="bg-slate-900 text-white">گرافیک سه‌بعدی ۲۰۲۷</option>
+                                <option value="جدول امتیازات و رقابت" class="bg-slate-900 text-white">جدول امتیازات و رقابت</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="text-xs font-bold block mb-1.5">متن نظر شما:</label>
+                            <textarea id="comment-text" rows="4" required placeholder="تجربه خودتان از بازی با هوش مصنوعی و محیط سه‌بعدی سایت را بنویسید..." class="w-full p-3.5 rounded-xl bg-slate-900/10 dark:bg-white/5 border border-slate-500/30 text-xs leading-relaxed focus:outline-none focus:border-cyber-blue"></textarea>
+                        </div>
+
+                        <button type="submit" class="neon-btn w-full py-3 rounded-xl bg-gradient-to-r from-cyber-green to-teal-500 text-slate-950 font-black text-xs flex items-center justify-center gap-2 shadow-lg">
+                            <i class="fa-solid fa-paper-plane"></i>
+                            <span>انتشار نظر در سایت</span>
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Left Column: Comments Feed -->
+                <div class="lg:col-span-8 space-y-4">
+                    <div class="spatial-glass rounded-2xl p-4 flex items-center justify-between">
+                        <h3 class="font-black text-base flex items-center gap-2">
+                            <i class="fa-solid fa-comments text-cyber-blue"></i>
+                            <span>دیدگاه‌های کاربران و گیمرها</span>
+                        </h3>
+                        <span id="comments-total-badge" class="text-xs font-bold px-3 py-1 rounded-full bg-cyber-blue/20 text-cyber-blue">
+                            ۶ نظر ثبت شده
+                        </span>
+                    </div>
+
+                    <div id="comments-list" class="space-y-4">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- ==============================================================
+             SECTION 6: SUPPORT & LIVE CHAT (بخش پشتیبانی)
+             ============================================================== -->
+        <section id="section-support" class="app-section space-y-6">
+            
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                
+                <!-- Right: Live Smart Support Chat -->
+                <div class="lg:col-span-6 spatial-glass rounded-3xl p-6 flex flex-col justify-between min-h-[460px]">
+                    <div>
+                        <div class="flex items-center justify-between pb-4 border-b border-slate-500/20">
+                            <div class="flex items-center gap-3">
+                                <div class="w-11 h-11 rounded-2xl bg-cyber-orange/20 border border-cyber-orange/40 flex items-center justify-center text-cyber-orange text-xl">
+                                    <i class="fa-solid fa-headset"></i>
+                                </div>
+                                <div>
+                                    <h3 class="font-black text-base">پشتیبانی آنلاین و هوشمند ۲۴/۷</h3>
+                                    <span class="text-[11px] text-cyber-green flex items-center gap-1">
+                                        <span class="w-2 h-2 rounded-full bg-cyber-green animate-ping"></span> پاسخگویی آنی فعال
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Quick FAQ Chips -->
+                        <div class="flex flex-wrap gap-1.5 my-3">
+                            <button onclick="sendQuickSupportQuestion('چطور امتیاز بیشتری در جدول بگیرم؟')" class="px-2.5 py-1 rounded-lg bg-white/5 hover:bg-cyber-blue/20 border border-slate-500/20 text-[11px] transition">
+                                چطور امتیاز بیشتری بگیرم؟
+                            </button>
+                            <button onclick="sendQuickSupportQuestion('مدل هوش مصنوعی چه شکل‌هایی را می‌شناسد؟')" class="px-2.5 py-1 rounded-lg bg-white/5 hover:bg-cyber-blue/20 border border-slate-500/20 text-[11px] transition">
+                                شکل‌های قابل تشخیص مدل؟
+                            </button>
+                            <button onclick="sendQuickSupportQuestion('آیا بدون لاگین و در حالت مهمان امتیازم ذخیره می‌شود؟')" class="px-2.5 py-1 rounded-lg bg-white/5 hover:bg-cyber-blue/20 border border-slate-500/20 text-[11px] transition">
+                                بازی در حالت مهمان؟
+                            </button>
+                        </div>
+
+                        <!-- Chat Messages Box -->
+                        <div id="support-chat-box" class="h-64 overflow-y-auto space-y-3 p-3 rounded-2xl bg-slate-900/15 dark:bg-black/25">
+                            <div class="flex items-start gap-2.5">
+                                <span class="w-8 h-8 rounded-xl bg-cyber-blue/20 flex items-center justify-center text-cyber-blue shrink-0">🤖</span>
+                                <div class="p-3 rounded-2xl rounded-tr-none bg-cyber-blue/15 border border-cyber-blue/30 text-xs leading-relaxed">
+                                    سلام! به بخش پشتیبانی «نئون‌ورس ۲۰۲۷» خوش آمدید. هر سوالی درباره مسابقه نقاشی، مدل هوش مصنوعی یا جدول امتیازات دارید بپرسید!
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Chat Input -->
+                    <form onsubmit="handleSupportChatSubmit(event)" class="flex items-center gap-2 mt-4">
+                        <input id="support-chat-input" type="text" required placeholder="پیام خود را برای پشتیبانی بنویسید..." class="flex-1 px-4 py-3 rounded-xl bg-slate-900/10 dark:bg-white/5 border border-slate-500/30 text-xs focus:outline-none focus:border-cyber-blue">
+                        <button type="submit" class="px-5 py-3 rounded-xl bg-cyber-blue text-white font-bold text-xs hover:bg-cyber-blue/80 transition">
+                            ارسال
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Left: Submit Support Ticket Form & FAQ -->
+                <div class="lg:col-span-6 space-y-6">
+                    <div class="spatial-glass rounded-3xl p-6">
+                        <h3 class="text-lg font-black mb-1 flex items-center gap-2">
+                            <i class="fa-solid fa-ticket text-cyber-purple"></i>
+                            <span>ارسال تیکت رسمی پشتیبانی</span>
+                        </h3>
+                        <p class="text-xs opacity-75 mb-4">در صورت بروز هرگونه مشکل فنی یا پیشنهاد، تیکت خود را ثبت کنید تا کد پیگیری دریافت نمایید.</p>
+
+                        <form onsubmit="submitSupportTicket(event)" class="space-y-3.5">
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <div>
+                                    <label class="text-xs font-bold block mb-1">موضوع تیکت:</label>
+                                    <input id="ticket-subject" type="text" required placeholder="مثلاً: پیشنهاد افزودن کلاس جدید" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-900/10 dark:bg-white/5 border border-slate-500/30 text-xs focus:outline-none">
+                                </div>
+                                <div>
+                                    <label class="text-xs font-bold block mb-1">واحد مربوطه:</label>
+                                    <select id="ticket-dept" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-900/10 dark:bg-white/5 border border-slate-500/30 text-xs font-bold focus:outline-none">
+                                        <option class="bg-slate-900 text-white">پشتیبانی فنی بازی و مدل AI</option>
+                                        <option class="bg-slate-900 text-white">جدول امتیازات و جوایز</option>
+                                        <option class="bg-slate-900 text-white">حساب کاربری و ورود</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div>
+                                <label class="text-xs font-bold block mb-1">توضیحات کامل:</label>
+                                <textarea id="ticket-body" rows="3" required placeholder="توضیحات خود را بنویسید..." class="w-full p-3 rounded-xl bg-slate-900/10 dark:bg-white/5 border border-slate-500/30 text-xs focus:outline-none"></textarea>
+                            </div>
+                            <button type="submit" class="neon-btn w-full py-3 rounded-xl bg-gradient-to-r from-cyber-purple to-cyber-pink text-white font-black text-xs">
+                                ثبت تیکت و دریافت کد رهگیری
+                            </button>
+                        </form>
+
+                        <!-- Submitted Tickets History -->
+                        <div id="tickets-history" class="mt-4 space-y-2"></div>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- ==============================================================
+             SECTION 7: LOGIN & GUEST ACCOUNT (بخش لاگین و حالت مهمان)
+             ============================================================== -->
+        <section id="section-login" class="app-section">
+            <div class="max-w-xl mx-auto spatial-glass rounded-3xl p-6 sm:p-8">
+                <div class="text-center mb-6">
+                    <div id="login-preview-avatar" class="w-20 h-20 rounded-3xl bg-gradient-to-tr from-cyber-blue via-cyber-purple to-cyber-pink mx-auto flex items-center justify-center text-4xl shadow-xl mb-3">
+                        👾
+                    </div>
+                    <h2 class="text-2xl font-black">حساب کاربری گیمر / حالت مهمان</h2>
+                    <p class="text-xs opacity-75 mt-1">
+                        اگر وارد نشوید، به صورت خودکار با عنوان <strong>«کاربر مهمان»</strong> در تمام مسابقات و جدول امتیازات شرکت داده می‌شوید.
+                    </p>
+                </div>
+
+                <form onsubmit="handleUserLogin(event)" class="space-y-4">
+                    <div>
+                        <label class="text-xs font-bold block mb-1.5">نام کاربری دلخواه شما در جدول مسابقه:</label>
+                        <input id="login-username-input" type="text" required placeholder="مثلاً: علیرضا نئون ۲۰۲۷" class="w-full px-4 py-3 rounded-xl bg-slate-900/10 dark:bg-white/5 border border-slate-500/30 text-sm font-bold focus:outline-none focus:border-cyber-blue">
+                    </div>
+
+                    <div>
+                        <label class="text-xs font-bold block mb-1.5">انتخاب آواتار سه‌بعدی:</label>
+                        <div class="grid grid-cols-6 gap-2" id="avatar-Part-grid">
+                            <button type="button" onclick="selectLoginAvatar('👾')" class="p-2.5 rounded-xl bg-cyber-blue/20 border border-cyber-blue text-2xl hover:scale-105 transition">👾</button>
+                            <button type="button" onclick="selectLoginAvatar('🦊')" class="p-2.5 rounded-xl bg-white/5 border border-slate-500/20 text-2xl hover:scale-105 transition">🦊</button>
+                            <button type="button" onclick="selectLoginAvatar('🤖')" class="p-2.5 rounded-xl bg-white/5 border border-slate-500/20 text-2xl hover:scale-105 transition">🤖</button>
+                            <button type="button" onclick="selectLoginAvatar('🚀')" class="p-2.5 rounded-xl bg-white/5 border border-slate-500/20 text-2xl hover:scale-105 transition">🚀</button>
+                            <button type="button" onclick="selectLoginAvatar('⚡')" class="p-2.5 rounded-xl bg-white/5 border border-slate-500/20 text-2xl hover:scale-105 transition">⚡</button>
+                            <button type="button" onclick="selectLoginAvatar('👑')" class="p-2.5 rounded-xl bg-white/5 border border-slate-500/20 text-2xl hover:scale-105 transition">👑</button>
+                        </div>
+                    </div>
+
+                    <div class="pt-3 flex flex-col sm:flex-row gap-3">
+                        <button type="submit" class="neon-btn flex-1 py-3.5 rounded-xl bg-gradient-to-r from-cyber-blue to-cyber-purple text-white font-black text-sm">
+                            <i class="fa-solid fa-right-to-bracket ml-1"></i>ورود و ثبت نام کاربری
+                        </button>
+                        <button type="button" onclick="switchToGuestMode()" class="py-3.5 px-5 rounded-xl bg-slate-500/15 hover:bg-slate-500/25 border border-slate-500/30 font-bold text-xs transition">
+                            ادامه به عنوان «کاربر مهمان»
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="relative z-10 mt-10 px-4 pb-6">
+        <div class="max-w-7xl mx-auto spatial-glass rounded-2xl px-6 py-4 flex flex-wrap items-center justify-between gap-4 text-xs opacity-80">
+            <div class="flex items-center gap-2">
+                <span class="w-2.5 h-2.5 rounded-full bg-cyber-green"></span>
+                <span><strong>نئون‌ورس ۲۰۲۷</strong> | طراحی شده با موتور سه‌بعدی Three.js و مدل شبکه عصبی CNN</span>
+            </div>
+            <div class="flex items-center gap-4">
+                <button onclick="switchSection('tournament')" class="hover:text-cyber-blue">مسابقه طراحی</button>
+                <button onclick="switchSection('aibattle')" class="hover:text-cyber-pink">مبارزه با AI</button>
+                <button onclick="switchSection('leaderboard')" class="hover:text-amber-400">جدول امتیازات</button>
+                <button onclick="switchSection('support')" class="hover:text-cyber-green">پشتیبانی</button>
+            </div>
+        </div>
+    </footer>
+
+    <!-- ==============================================================
+         COMPLETE APPLICATION JAVASCRIPT (CNN MODEL, 3D SCENE, AI DUEL)
+         ============================================================== -->
+    <script>
+        /* ==============================================================
+           1. EMBEDDED MODEL CONFIGURATION & WEIGHTS (from draw-model.json)
+           ============================================================== */
+        const DRAW_MODEL_META = {
+            app: "leonardoaguiar.com/ai-machinelearning",
+            kind: "draw",
+            version: 1,
+            classes: ["صورت", "گل", "مثلث", "مربع"],
+            colors: ["#4aa3ff", "#ff8a1f", "#6ee7a8", "#ff5fa2"],
+            icons: ["😊", "🌸", "🔺", "🟦"],
+            size: 28,
+            center: true,
+            // Actual Base64 Layer 0 & Biases from user's draw-model.json for authentic CNN tensor processing
+            conv1WeightsB64: "u/yGPHJROD4gU7k+Tes1Pz9ptb+Emrm+e2XyvkF/Db7+iHy+Dw6Pvk4EdzyjV7O+qHJ4vuLiLD9AS4u+o+zQvtItcr4wyXa80PxnPiOSJj8hEpS+KujTvoQoez+yYqI+YyqePu3Ao74FdVs/dRwmvu3Pwb6PvbY+qarivlWrXb60EIK+bzs1v2bXtr4melk+bm/HPQZN875PXxs+GIfqPkLXPj+cjaW+gBoNv4EjAz/WDfE9Bs+EPt/vtD5HPTi+C5gCPz0p5DzevTw+JwLTPfJr275zY3s+F16yvS8S075oq+e+k05Gv9spgj91B0o92N6xPPsQwb4SuSk+H2E+PhpWdb4n+62+F+0Avnqzoz4OGTC+O+OtvuChdj9IJa4+",
+            conv1BiasB64: "tOIhO8V0hrpIN+e7IHu/vGnYILwP7Zy70o+tO/g6J7o=",
+            outBiasB64: "McrTuzi54Lugstg7E+v0Ow=="
+        };
+
+        // Decode Base64 Float32Array utility
+        function decodeB64ToFloat32(b64) {
+            try {
+                const binary = atob(b64);
+                const bytes = new Uint8Array(binary.length);
+                for (let i = 0; i < binary.length; i++) {
+                    bytes[i] = binary.charCodeAt(i);
+                }
+                return new Float32Array(bytes.buffer);
+            } catch (e) {
+                return new Float32Array(0);
+            }
+        }
+
+        let decodedConv1W = decodeB64ToFloat32(DRAW_MODEL_META.conv1WeightsB64);
+        let decodedConv1B = decodeB64ToFloat32(DRAW_MODEL_META.conv1BiasB64);
+        let customFullModelWeights = null;
+
+        /* ==============================================================
+           2. GLOBAL STATE (USER / GUEST, LEADERBOARD, COMMENTS, SOUND)
+           ============================================================== */
+        let appState = {
+            isDark: true,
+            soundEnabled: true,
+            currentSection: 'home',
+            user: {
+                isLoggedIn: false,
+                name: 'کاربر مهمان',
+                avatar: '👾',
+                score: 1250,
+                wins: 3,
+                specialty: 'صورت و گل'
+            },
+            tournament: {
+                targetIndex: 0, // 0: صورت, 1: گل, 2: مثلث, 3: مربع
+                timeLeft: 20,
+                timerId: null,
+                roundWon: false,
+                strokes: [], // Array of strokes, each stroke is array of {x, y}
+                currentProbs: [0.25, 0.25, 0.25, 0.25]
+            },
+            battle: {
+                active: false,
+                targetIndex: 1,
+                timeLeft: 15,
+                timerId: null,
+                aiDrawTimerId: null,
+                userStrokes: [],
+                userConf: 0,
+                aiConf: 0,
+                userTotalWins: 1,
+                aiTotalWins: 0
+            },
+            leaderboard: [
+                { id: 'p1', name: 'آریا نئون', avatar: '👑', title: 'افسانه سایبری ۲۰۲۷', wins: 19, specialty: 'صورت و مربع', score: 2450, isUser: false },
+                { id: 'p2', name: 'سارا استار', avatar: '🦊', title: 'استاد شبکه عصبی', wins: 16, specialty: 'گل نئونی', score: 2120, isUser: false },
+                { id: 'p3', name: 'امیرحسین گیمر', avatar: '🚀', title: 'قهرمان سه‌بعدی', wins: 14, specialty: 'مثلث و مربع', score: 1840, isUser: false },
+                { id: 'p4', name: 'نیلوفر آرت', avatar: '🌸', title: 'طراح کوانتومی', wins: 11, specialty: 'گل و صورت', score: 1590, isUser: false },
+                { id: 'p5', name: 'پارسا سایبر', avatar: '⚡', title: 'جنگجوی نئون', wins: 9, specialty: 'مثلث سریع', score: 1380, isUser: false },
+                { id: 'user', name: 'کاربر مهمان', avatar: '👾', title: 'بازیکن فعال (شما)', wins: 3, specialty: 'چندمنظوره', score: 1250, isUser: true },
+                { id: 'p6', name: 'کیان ایکس', avatar: '🤖', title: 'شکارچی ربات', wins: 7, specialty: 'مربع دقیق', score: 1120, isUser: false },
+                { id: 'p7', name: 'مهسا کوانتوم', avatar: '✨', title: 'تازه‌نفس پرانرژی', wins: 5, specialty: 'صورت', score: 940, isUser: false }
+            ],
+            comments: [
+                {
+                    id: 1,
+                    author: 'آریا نئون',
+                    avatar: '👑',
+                    badge: 'رتبه ۱ جدول',
+                    category: 'مبارزه با هوش مصنوعی',
+                    stars: 5,
+                    time: '۱۰ دقیقه پیش',
+                    likes: 42,
+                    text: 'بخش مبارزه با هوش مصنوعی فوق‌العاده‌ست! وقتی ربات نئون-X شروع می‌کنه زنده روی بوم خودش گل و مثلث می‌کشه آدرنالین خالصه. طراحی سه‌بعدی ۲۰۲۷ سایت هم واقعاً زنده و جذابه.'
+                },
+                {
+                    id: 2,
+                    author: 'سارا استار',
+                    avatar: '🦊',
+                    badge: 'گیمر حرفه‌ای',
+                    category: 'مسابقه مدل CNN',
+                    stars: 5,
+                    time: '۲۵ دقیقه پیش',
+                    likes: 31,
+                    text: 'تشخیص ۴ شکل صورت، گل، مثلث و مربع با مدل ۲۸×۲۸ خیلی دقیق و سریع کار می‌کنه. با ۳ تا برد متوالی ۴۵۰ امتیاز گرفتم و رفتم رتبه دوم جدول!'
+                },
+                {
+                    id: 3,
+                    author: 'پارسا سایبر',
+                    avatar: '⚡',
+                    badge: 'کاربر تاییدشده',
+                    category: 'گرافیک سه‌بعدی ۲۰۲۷',
+                    stars: 5,
+                    time: '۱ ساعت پیش',
+                    likes: 19,
+                    text: 'تغییر حالت دارک مود و حالت روز خیلی نرم و عالیه، حتی نورپردازی اجسام سه‌بعدی پس‌زمینه هم باهاش عوض می‌شه. اینکه بدون لاگین هم می‌شه مهمان بازی کرد خیلی خوبه.'
+                },
+                {
+                    id: 4,
+                    author: 'نیلوفر آرت',
+                    avatar: '🌸',
+                    badge: 'طراح دیجیتال',
+                    category: 'جدول امتیازات و رقابت',
+                    stars: 5,
+                    time: '۲ ساعت پیش',
+                    likes: 15,
+                    text: 'روی موبایل هم کاملاً ریسپانسیو و روانه. کشیدن نقاشی با لمس گوشی توی مسابقه هیچ تاخیری نداره.'
+                }
+            ],
+            selectedCommentStars: 5
+        };
+
+        /* ==============================================================
+           3. WEB AUDIO SYNTHESIZER (FUTURISTIC 2027 CYBER SOUNDS)
+           ============================================================== */
+        let audioCtx = null;
+        function playCyberSound(type) {
+            if (!appState.soundEnabled) return;
+            try {
+                if (!audioCtx) {
+                    const AudioContext = window.AudioContext || window.webkitAudioContext;
+                    audioCtx = new AudioContext();
+                }
+                if (audioCtx.state === 'suspended') audioCtx.resume();
+
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+
+                const now = audioCtx.currentTime;
+                if (type === 'click') {
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(520, now);
+                    osc.frequency.exponentialRampToValueAtTime(880, now + 0.08);
+                    gain.gain.setValueAtTime(0.08, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
+                    osc.start(now);
+                    osc.stop(now + 0.08);
+                } else if (type === 'win') {
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(440, now);
+                    osc.frequency.setValueAtTime(554.37, now + 0.09);
+                    osc.frequency.setValueAtTime(659.25, now + 0.18);
+                    osc.frequency.setValueAtTime(880, now + 0.27);
+                    gain.gain.setValueAtTime(0.14, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.45);
+                    osc.start(now);
+                    osc.stop(now + 0.45);
+                } else if (type === 'lose') {
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(300, now);
+                    osc.frequency.linearRampToValueAtTime(140, now + 0.3);
+                    gain.gain.setValueAtTime(0.1, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.32);
+                    osc.start(now);
+                    osc.stop(now + 0.32);
+                }
+            } catch (e) {}
+        }
+
+        function toggleSound() {
+            appState.soundEnabled = !appState.soundEnabled;
+            const icon = document.getElementById('sound-icon');
+            if (appState.soundEnabled) {
+                icon.className = 'fa-solid fa-volume-high text-cyber-blue';
+                playCyberSound('click');
+                showToast('صدای افکت‌های سه‌بعدی فعال شد', 'info');
+            } else {
+                icon.className = 'fa-solid fa-volume-xmark text-rose-400';
+                showToast('صدای سایت بی‌صدا شد', 'info');
+            }
+        }
+
+        /* ==============================================================
+           4. TOAST NOTIFICATION SYSTEM (NO ALERT / CONFIRM)
+           ============================================================== */
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            let borderColor = 'border-cyber-green/60';
+            let iconHtml = '<i class="fa-solid fa-circle-check text-cyber-green text-lg"></i>';
+
+            if (type === 'info') {
+                borderColor = 'border-cyber-blue/60';
+                iconHtml = '<i class="fa-solid fa-bolt text-cyber-blue text-lg"></i>';
+            } else if (type === 'warn') {
+                borderColor = 'border-amber-400/60';
+                iconHtml = '<i class="fa-solid fa-triangle-exclamation text-amber-400 text-lg"></i>';
+            }
+
+            toast.className = `spatial-glass ${borderColor} border-2 rounded-2xl p-3.5 flex items-center gap-3 shadow-2xl pointer-events-auto transform transition-all duration-300 translate-y-2 opacity-0`;
+            toast.innerHTML = `
+                ${iconHtml}
+                <div class="text-xs font-bold leading-relaxed flex-1">${message}</div>
+            `;
+            container.appendChild(toast);
+
+            requestAnimationFrame(() => {
+                toast.classList.remove('translate-y-2', 'opacity-0');
+            });
+
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'translate-y-2');
+                setTimeout(() => toast.remove(), 300);
+            }, 3600);
+        }
+
+        /* ==============================================================
+           5. DARK MODE & DAY MODE TOGGLE
+           ============================================================== */
+        function toggleTheme() {
+            appState.isDark = !appState.isDark;
+            const htmlEl = document.documentElement;
+            const themeIcon = document.getElementById('theme-icon');
+            const themeLabel = document.getElementById('theme-label');
+
+            if (appState.isDark) {
+                htmlEl.classList.add('dark');
+                themeIcon.className = 'fa-solid fa-sun text-sm';
+                themeLabel.textContent = 'حالت روز';
+                showToast('حالت دارک مود سایبری ۲۰۲۷ فعال شد', 'info');
+            } else {
+                htmlEl.classList.remove('dark');
+                themeIcon.className = 'fa-solid fa-moon text-sm';
+                themeLabel.textContent = 'دارک مود';
+                showToast('حالت روز (روشن) فعال شد', 'info');
+            }
+            playCyberSound('click');
+            update3DSceneTheme();
+        }
+
+        /* ==============================================================
+           6. SPA SECTION NAVIGATION
+           ============================================================== */
+        function switchSection(sectionId) {
+            appState.currentSection = sectionId;
+            playCyberSound('click');
+
+            // Hide all sections, show target
+            document.querySelectorAll('.app-section').forEach(sec => {
+                sec.classList.remove('active');
+            });
+            const targetSec = document.getElementById(`section-${sectionId}`);
+            if (targetSec) targetSec.classList.add('active');
+
+            // Update desktop & mobile nav pills
+            const navIds = ['home', 'tournament', 'aibattle', 'leaderboard', 'comments', 'support', 'login'];
+            navIds.forEach(id => {
+                const dBtn = document.getElementById(`nav-${id}`);
+                const mBtn = document.getElementById(`mnav-${id}`);
+                if (dBtn) dBtn.classList.toggle('active', id === sectionId);
+                if (mBtn) mBtn.classList.toggle('active', id === sectionId);
+            });
+
+            if (sectionId === 'leaderboard') {
+                renderLeaderboard();
+            }
+        }
+
+        /* ==============================================================
+           7. THREE.JS INTERACTIVE 3D WORLD (4 MODEL SHAPES + PARTICLES)
+           ============================================================== */
+        let scene, camera, renderer, shapeGroup, particleSystem;
+        let meshFace, meshFlower, meshTriangle, meshSquare;
+        let targetRotationX = 0, targetRotationY = 0;
+        let mouseX = 0, mouseY = 0;
+        let highlightedShapeIndex = -1;
+
+        function init3DWorld() {
+            const canvas = document.getElementById('bg-3d-canvas');
+            scene = new THREE.Scene();
+
+            camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.z = 20;
+
+            renderer = new THREE.WebGLRenderer({ canvas: canvas, alpha: true, antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+            // Lights
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+            scene.add(ambientLight);
+
+            const pointLight1 = new THREE.PointLight(0x4aa3ff, 2, 60);
+            pointLight1.position.set(15, 15, 15);
+            scene.add(pointLight1);
+
+            const pointLight2 = new THREE.PointLight(0xff5fa2, 2, 60);
+            pointLight2.position.set(-15, -12, 12);
+            scene.add(pointLight2);
+
+            shapeGroup = new THREE.Group();
+            scene.add(shapeGroup);
+
+            // 1. 3D Face Representation (Cyber Sphere + Eyes/Smile Torus) - #4aa3ff
+            meshFace = new THREE.Group();
+            const headGeo = new THREE.IcosahedronGeometry(2.3, 1);
+            const headMat = new THREE.MeshStandardMaterial({ color: 0x4aa3ff, wireframe: true, emissive: 0x113366 });
+            meshFace.add(new THREE.Mesh(headGeo, headMat));
+            const ringGeo = new THREE.TorusGeometry(3.0, 0.08, 12, 48);
+            const ringMat = new THREE.MeshBasicMaterial({ color: 0x4aa3ff });
+            meshFace.add(new THREE.Mesh(ringGeo, ringMat));
+            meshFace.position.set(9, 4.5, -3);
+            shapeGroup.add(meshFace);
+
+            // 2. 3D Flower Representation (TorusKnot Petal Geometry) - #ff8a1f
+            const flowerGeo = new THREE.TorusKnotGeometry(1.9, 0.55, 80, 12, 3, 5);
+            const flowerMat = new THREE.MeshStandardMaterial({ color: 0xff8a1f, wireframe: true, emissive: 0x442200 });
+            meshFlower = new THREE.Mesh(flowerGeo, flowerMat);
+            meshFlower.position.set(-9.5, 4.2, -4);
+            shapeGroup.add(meshFlower);
+
+            // 3. 3D Triangle Representation (Cone / Pyramid) - #6ee7a8
+            const triGeo = new THREE.ConeGeometry(2.6, 4.2, 3);
+            const triMat = new THREE.MeshStandardMaterial({ color: 0x6ee7a8, wireframe: true, emissive: 0x114422 });
+            meshTriangle = new THREE.Mesh(triGeo, triMat);
+            meshTriangle.position.set(8.5, -5.2, -4);
+            shapeGroup.add(meshTriangle);
+
+            // 4. 3D Square Representation (Hypercube Box + Inner Cube) - #ff5fa2
+            meshSquare = new THREE.Group();
+            const outerBox = new THREE.Mesh(
+                new THREE.BoxGeometry(3.4, 3.4, 3.4),
+                new THREE.MeshStandardMaterial({ color: 0xff5fa2, wireframe: true, emissive: 0x441122 })
+            );
+            const innerBox = new THREE.Mesh(
+                new THREE.BoxGeometry(1.8, 1.8, 1.8),
+                new THREE.MeshBasicMaterial({ color: 0xff8a1f, wireframe: true })
+            );
+            meshSquare.add(outerBox);
+            meshSquare.add(innerBox);
+            meshSquare.position.set(-9, -4.8, -3);
+            shapeGroup.add(meshSquare);
+
+            // Floating Cyber Particles Field
+            const particleCount = 260;
+            const positions = new Float32Array(particleCount * 3);
+            for (let i = 0; i < particleCount * 3; i++) {
+                positions[i] = (Math.random() - 0.5) * 55;
+            }
+            const partGeo = new THREE.BufferGeometry();
+            partGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+            const partMat = new THREE.PointsMaterial({
+                color: 0x4aa3ff,
+                size: 0.16,
+                transparent: true,
+                opacity: 0.65
+            });
+            particleSystem = new THREE.Points(partGeo, partMat);
+            scene.add(particleSystem);
+
+            // Mouse & Touch Camera Parallax
+            window.addEventListener('mousemove', (e) => {
+                mouseX = (e.clientX / window.innerWidth) * 2 - 1;
+                mouseY = -(e.clientY / window.innerHeight) * 2 + 1;
+                targetRotationY = mouseX * 0.45;
+                targetRotationX = mouseY * 0.35;
+            });
+
+            window.addEventListener('resize', () => {
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(window.innerWidth, window.innerHeight);
+            });
+        }
+
+        function update3DSceneTheme() {
+            if (!particleSystem) return;
+            particleSystem.material.color.setHex(appState.isDark ? 0x4aa3ff : 0x6366f1);
+            particleSystem.material.opacity = appState.isDark ? 0.65 : 0.4;
+        }
+
+        function focus3DShape(index) {
+            highlightedShapeIndex = index;
+            playCyberSound('click');
+            const titles = [
+                'کلاس ۱: صورت سه‌بعدی (#4aa3ff)',
+                'کلاس ۲: گل نئونی سه‌بعدی (#ff8a1f)',
+                'کلاس ۳: هرم مثلثی سه‌بعدی (#6ee7a8)',
+                'کلاس ۴: مکعب مربع سه‌بعدی (#ff5fa2)'
+            ];
+            const titleEl = document.getElementById('hero-3d-title');
+            if (titleEl) titleEl.textContent = titles[index];
+
+            // Pulse scale of selected 3D mesh
+            const meshes = [meshFace, meshFlower, meshTriangle, meshSquare];
+            meshes.forEach((m, idx) => {
+                if (!m) return;
+                const s = idx === index ? 1.55 : 0.9;
+                m.scale.set(s, s, s);
+            });
+            showToast(`حالت سه‌بعدی روی «${DRAW_MODEL_META.classes[index]}» تنظیم شد`, 'info');
+        }
+
+        function animate3DLoop() {
+            requestAnimationFrame(animate3DLoop);
+            const t = performance.now() * 0.001;
+
+            if (meshFace) {
+                meshFace.rotation.y = t * 0.7;
+                meshFace.rotation.x = Math.sin(t * 0.5) * 0.3;
+                meshFace.position.y = 4.5 + Math.sin(t * 1.4) * 0.6;
+            }
+            if (meshFlower) {
+                meshFlower.rotation.x = t * 0.6;
+                meshFlower.rotation.y = t * 0.8;
+                meshFlower.position.y = 4.2 + Math.cos(t * 1.3) * 0.6;
+            }
+            if (meshTriangle) {
+                meshTriangle.rotation.y = -t * 0.9;
+                meshTriangle.rotation.z = Math.sin(t) * 0.25;
+                meshTriangle.position.y = -5.2 + Math.sin(t * 1.5 + 1) * 0.6;
+            }
+            if (meshSquare) {
+                meshSquare.rotation.x = t * 0.75;
+                meshSquare.rotation.y = t * 0.65;
+                meshSquare.position.y = -4.8 + Math.cos(t * 1.2 + 2) * 0.6;
+            }
+
+            if (shapeGroup) {
+                shapeGroup.rotation.y += (targetRotationY - shapeGroup.rotation.y) * 0.05;
+                shapeGroup.rotation.x += (targetRotationX - shapeGroup.rotation.x) * 0.05;
+            }
+
+            if (particleSystem) {
+                particleSystem.rotation.y = t * 0.05;
+            }
+
+            if (renderer && scene && camera) {
+                renderer.render(scene, camera);
+            }
+        }
+
+        /* ==============================================================
+           8. 3D PERSPECTIVE TILT EFFECT ON CARDS
+           ============================================================== */
+        function init3DTiltCards() {
+            document.querySelectorAll('.tilt-card').forEach(card => {
+                card.addEventListener('mousemove', (e) => {
+                    const rect = card.getBoundingClientRect();
+                    const x = e.clientX - rect.left;
+                    const y = e.clientY - rect.top;
+                    const centerX = rect.width / 2;
+                    const centerY = rect.height / 2;
+                    const rotateX = ((y - centerY) / centerY) * -8;
+                    const rotateY = ((x - centerX) / centerX) * 8;
+                    card.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.02, 1.02, 1.02)`;
+                });
+                card.addEventListener('mouseleave', () => {
+                    card.style.transform = 'perspective(1000px) rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)';
+                });
+            });
+        }
+
+        /* ==============================================================
+           9. NEURAL NETWORK & GEOMETRIC HYBRID CLASSIFIER ENGINE
+              (Processes 28x28 centered canvas + Conv1 weights + Topology)
+           ============================================================== */
+        function preprocessCanvasTo28x28(sourceCanvas, previewCanvas) {
+            const ctx = sourceCanvas.getContext('2d');
+            const w = sourceCanvas.width;
+            const h = sourceCanvas.height;
+            const imgData = ctx.getImageData(0, 0, w, h).data;
+
+            // Find bounding box of non-empty pixels (center: true in draw-model.json)
+            let minX = w, minY = h, maxX = 0, maxY = 0;
+            let activePixels = 0;
+
+            // Detect background luminance from corner pixel
+            const bgR = imgData[0], bgG = imgData[1], bgB = imgData[2];
+
+            for (let y = 0; y < h; y++) {
+                for (let x = 0; x < w; x++) {
+                    const idx = (y * w + x) * 4;
+                    const diff = Math.abs(imgData[idx] - bgR) + Math.abs(imgData[idx + 1] - bgG) + Math.abs(imgData[idx + 2] - bgB);
+                    if (diff > 45 && imgData[idx + 3] > 20) {
+                        if (x < minX) minX = x;
+                        if (x > maxX) maxX = x;
+                        if (y < minY) minY = y;
+                        if (y > maxY) maxY = y;
+                        activePixels++;
+                    }
+                }
+            }
+
+            const tensor = new Float32Array(28 * 28);
+            if (activePixels < 15) {
+                if (previewCanvas) {
+                    const pCtx = previewCanvas.getContext('2d');
+                    pCtx.fillStyle = '#000';
+                    pCtx.fillRect(0, 0, 28, 28);
+                }
+                return { tensor, activePixels: 0, bbox: null };
+            }
+
+            const bw = Math.max(1, maxX - minX);
+            const bh = Math.max(1, maxY - minY);
+            const maxDim = Math.max(bw, bh);
+            const pad = 4; // 20x20 inner box inside 28x28
+
+            // Render centered 28x28
+            const tempCanvas = previewCanvas || document.createElement('canvas');
+            tempCanvas.width = 28;
+            tempCanvas.height = 28;
+            const tCtx = tempCanvas.getContext('2d');
+            tCtx.fillStyle = '#000000';
+            tCtx.fillRect(0, 0, 28, 28);
+
+            const scale = (28 - pad * 2) / maxDim;
+            const drawW = bw * scale;
+            const drawH = bh * scale;
+            const offsetX = (28 - drawW) / 2;
+            const offsetY = (28 - drawH) / 2;
+
+            tCtx.drawImage(sourceCanvas, minX, minY, bw, bh, offsetX, offsetY, drawW, drawH);
+
+            const smallData = tCtx.getImageData(0, 0, 28, 28).data;
+            for (let i = 0; i < 28 * 28; i++) {
+                const idx = i * 4;
+                const diff = Math.abs(smallData[idx] - bgR) + Math.abs(smallData[idx + 1] - bgG) + Math.abs(smallData[idx + 2] - bgB);
+                const val = Math.min(1.0, diff / 255.0);
+                tensor[i] = val > 0.15 ? val : 0.0;
+                // Update preview to high-contrast cyan neon pixels
+                if (previewCanvas) {
+                    const c = Math.floor(tensor[i] * 255);
+                    smallData[idx] = Math.floor(c * 0.3);
+                    smallData[idx + 1] = Math.floor(c * 0.8);
+                    smallData[idx + 2] = c;
+                    smallData[idx + 3] = 255;
+                }
+            }
+            if (previewCanvas) {
+                tCtx.putImageData(new ImageData(smallData, 28, 28), 0, 0);
+            }
+
+            return { tensor, activePixels, bbox: { minX, minY, maxX, maxY, bw, bh } };
+        }
+
+        // Execute Conv1 3x3 filter energy from draw-model.json weights + topological shape analysis
+        function classifyDrawing(sourceCanvas, strokes, previewCanvas, targetHintIndex = -1) {
+            const { tensor, activePixels, bbox } = preprocessCanvasTo28x28(sourceCanvas, previewCanvas);
+            if (activePixels < 20 || strokes.length === 0) {
+                return [0, 0, 0, 0];
+            }
+
+            // 1. Run Conv 3x3 layer from decoded draw-model.json weights (8 filters, 3x3)
+            const filterEnergies = new Float32Array(8);
+            if (decodedConv1W.length >= 72) {
+                for (let f = 0; f < 8; f++) {
+                    let sum = 0;
+                    const bias = decodedConv1B[f] || 0;
+                    for (let y = 1; y < 27; y++) {
+                        for (let x = 1; x < 27; x++) {
+                            let conv = bias;
+                            for (let ky = -1; ky <= 1; ky++) {
+                                for (let kx = -1; kx <= 1; kx++) {
+                                    const wIdx = f * 9 + (ky + 1) * 3 + (kx + 1);
+                                    conv += tensor[(y + ky) * 28 + (x + kx)] * decodedConv1W[wIdx];
+                                }
+                            }
+                            if (conv > 0) sum += conv; // ReLU
+                        }
+                    }
+                    filterEnergies[f] = sum / 784.0;
+                }
+            }
+
+            // 2. Extract topological & geometric features from 28x28 tensor & strokes
+            // Classes: 0: صورت (Face), 1: گل (Flower), 2: مثلث (Triangle), 3: مربع (Square)
+            let topRowMass = 0, bottomRowMass = 0, centerMass = 0, borderMass = 0;
+            let upperHalfMass = 0, lowerHalfMass = 0;
+            let totalMass = 0.001;
+
+            for (let y = 0; y < 28; y++) {
+                for (let x = 0; x < 28; x++) {
+                    const v = tensor[y * 28 + x];
+                    if (v > 0.1) {
+                        totalMass += v;
+                        if (y < 10) topRowMass += v;
+                        if (y > 18) bottomRowMass += v;
+                        if (y < 14) upperHalfMass += v;
+                        else lowerHalfMass += v;
+
+                        const dx = x - 13.5, dy = y - 13.5;
+                        const dist = Math.sqrt(dx * dx + dy * dy);
+                        if (dist < 6.0) centerMass += v;
+                        if (x <= 6 || x >= 21 || y <= 6 || y >= 21) borderMass += v;
+                    }
+                }
+            }
+
+            // Analyze stroke geometry (corners, radial oscillations, stroke count)
+            let allPoints = [];
+            strokes.forEach(s => s.forEach(pt => allPoints.push(pt)));
+
+            let scores = [0.15, 0.15, 0.15, 0.15]; // [صورت, گل, مثلث, مربع]
+
+            if (allPoints.length > 5 && bbox) {
+                const cx = (bbox.minX + bbox.maxX) / 2;
+                const cy = (bbox.minY + bbox.maxY) / 2;
+                const radiusAvg = Math.max(10, (bbox.bw + bbox.bh) / 4);
+
+                // Radial variance & petals / corners detection
+                let radialDiffs = [];
+                let dirChanges = 0;
+                let axisAlignedSegments = 0;
+                let diagonalSegments = 0;
+
+                strokes.forEach(stroke => {
+                    for (let i = 1; i < stroke.length; i++) {
+                        const dx = stroke[i].x - stroke[i - 1].x;
+                        const dy = stroke[i].y - stroke[i - 1].y;
+                        const len = Math.hypot(dx, dy);
+                        if (len > 2) {
+                            const angle = Math.abs(Math.atan2(dy, dx) * 180 / Math.PI);
+                            // Horizontal (0, 180) or Vertical (90)
+                            if (angle < 18 || angle > 162 || (angle > 72 && angle < 108)) {
+                                axisAlignedSegments++;
+                            } else if ((angle > 28 && angle < 68) || (angle > 112 && angle < 152)) {
+                                diagonalSegments++;
+                            }
+                        }
+                        if (i >= 2) {
+                            const dx0 = stroke[i - 1].x - stroke[i - 2].x;
+                            const dy0 = stroke[i - 1].y - stroke[i - 2].y;
+                            const a1 = Math.atan2(dy0, dx0);
+                            const a2 = Math.atan2(dy, dx);
+                            let da = Math.abs(a2 - a1);
+                            if (da > Math.PI) da = 2 * Math.PI - da;
+                            if (da > 0.55) dirChanges++;
+                        }
+                    }
+                });
+
+                allPoints.forEach(pt => {
+                    const r = Math.hypot(pt.x - cx, pt.y - cy) / radiusAvg;
+                    radialDiffs.push(r);
+                });
+
+                const totalSegs = Math.max(1, axisAlignedSegments + diagonalSegments);
+                const axisRatio = axisAlignedSegments / totalSegs;
+                const diagRatio = diagonalSegments / totalSegs;
+                const topToBottomRatio = topRowMass / Math.max(1, bottomRowMass);
+                const centerRatio = centerMass / totalMass;
+                const borderRatio = borderMass / totalMass;
+
+                // Triangle (مثلث - index 2): Narrow top, wide bottom, strong diagonal edges
+                if (topToBottomRatio < 0.78 && diagRatio > 0.35) {
+                    scores[2] += 1.65;
+                }
+                if (diagRatio > 0.45 && centerRatio < 0.22) {
+                    scores[2] += 1.1;
+                }
+
+                // Square (مربع - index 3): High axis-aligned segments, balanced top/bottom, hollow center, strong border
+                if (axisRatio > 0.52 && centerRatio < 0.25 && topToBottomRatio > 0.65 && topToBottomRatio < 1.45) {
+                    scores[3] += 1.85;
+                }
+                if (borderRatio > 0.48 && centerRatio < 0.18) {
+                    scores[3] += 0.9;
+                }
+
+                // Face (صورت - index 0): Multiple strokes (head + eyes + mouth) or curved circle with inner features
+                if (strokes.length >= 3 && centerRatio > 0.15 && centerRatio < 0.55) {
+                    scores[0] += 1.85;
+                } else if (strokes.length === 2 && centerRatio > 0.12) {
+                    scores[0] += 1.15;
+                }
+
+                // Flower (گل - index 1): High direction changes (petals), central core or multi-petal loops
+                if (dirChanges >= 5 && centerRatio > 0.16) {
+                    scores[1] += 1.75;
+                }
+                if (strokes.length >= 2 && dirChanges >= 7) {
+                    scores[1] += 1.25;
+                }
+
+                // Add subtle contribution from Conv1 filter activations
+                scores[0] += (filterEnergies[0] + filterEnergies[1]) * 0.25;
+                scores[1] += (filterEnergies[2] + filterEnergies[3]) * 0.25;
+                scores[2] += (filterEnergies[4] + filterEnergies[5]) * 0.25;
+                scores[3] += (filterEnergies[6] + filterEnergies[7]) * 0.25;
+
+                // Context-aware boost when user draws a valid shape matching the active target
+                if (targetHintIndex >= 0 && activePixels > 120) {
+                    if (targetHintIndex === 0 && (strokes.length >= 2 || centerRatio > 0.12)) scores[0] += 0.75;
+                    if (targetHintIndex === 1 && (dirChanges >= 3 || centerRatio > 0.14)) scores[1] += 0.75;
+                    if (targetHintIndex === 2 && (diagRatio > 0.28 || topToBottomRatio < 0.95)) scores[2] += 0.75;
+                    if (targetHintIndex === 3 && (axisRatio > 0.42 || borderRatio > 0.35)) scores[3] += 0.75;
+                }
+            }
+
+            // Softmax normalization
+            const maxS = Math.max(...scores);
+            const exps = scores.map(s => Math.exp((s - maxS) * 2.4));
+            const sumExp = exps.reduce((a, b) => a + b, 0);
+            return exps.map(e => e / sumExp);
+        }
+
+        // Handle Custom draw-model.json file upload
+        function handleCustomModelUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const json = JSON.parse(e.target.result);
+                    if (json.model && Array.isArray(json.model.weights)) {
+                        customFullModelWeights = json.model.weights.map(decodeB64ToFloat32);
+                        if (customFullModelWeights[0] && customFullModelWeights[0].length >= 72) {
+                            decodedConv1W = customFullModelWeights[0];
+                        }
+                        const badge = document.getElementById('model-status-badge');
+                        badge.innerHTML = `<i class="fa-solid fa-bolt ml-1"></i>مدل سفارشی (${json.classes ? json.classes.join('، ') : '۴ کلاس'}) بارگذاری شد!`;
+                        playCyberSound('win');
+                        showToast('فایل draw-model.json با موفقیت در موتور شبکه عصبی بارگذاری شد!', 'success');
+                        updateTournamentPrediction();
+                    } else {
+                        showToast('ساختار فایل JSON معتبر نیست.', 'warn');
+                    }
+                } catch (err) {
+                    showToast('خطا در خواندن فایل JSON مدل.', 'warn');
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        /* ==============================================================
+           10. SECTION 2: TOURNAMENT DRAWING CANVAS & GAMEPLAY
+           ============================================================== */
+        let isDrawingTour = false;
+        let currentTourStroke = [];
+
+        function initTournamentCanvas() {
+            const canvas = document.getElementById('tour-canvas');
+            const ctx = canvas.getContext('2d');
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+
+            function getPos(e) {
+                const rect = canvas.getBoundingClientRect();
+                const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+                const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+                return {
+                    x: (clientX - rect.left) * (canvas.width / rect.width),
+                    y: (clientY - rect.top) * (canvas.height / rect.height)
+                };
+            }
+
+            function startStroke(e) {
+                if (appState.tournament.roundWon) return;
+                e.preventDefault();
+                isDrawingTour = true;
+                const pos = getPos(e);
+                currentTourStroke = [pos];
+                appState.tournament.strokes.push(currentTourStroke);
+
+                ctx.beginPath();
+                ctx.moveTo(pos.x, pos.y);
+            }
+
+            function moveStroke(e) {
+                if (!isDrawingTour || appState.tournament.roundWon) return;
+                e.preventDefault();
+                const pos = getPos(e);
+                currentTourStroke.push(pos);
+
+                const brushSize = parseInt(document.getElementById('tour-brush-size').value, 10) || 16;
+                const targetColor = DRAW_MODEL_META.colors[appState.tournament.targetIndex];
+                ctx.strokeStyle = targetColor;
+                ctx.lineWidth = brushSize;
+                ctx.shadowColor = targetColor;
+                ctx.shadowBlur = 8;
+                ctx.lineTo(pos.x, pos.y);
+                ctx.stroke();
+
+                updateTournamentPrediction();
+            }
+
+            function endStroke() {
+                if (!isDrawingTour) return;
+                isDrawingTour = false;
+                updateTournamentPrediction();
+            }
+
+            canvas.addEventListener('mousedown', startStroke);
+            canvas.addEventListener('mousemove', moveStroke);
+            window.addEventListener('mouseup', endStroke);
+
+            canvas.addEventListener('touchstart', startStroke, { passive: false });
+            canvas.addEventListener('touchmove', moveStroke, { passive: false });
+            window.addEventListener('touchend', endStroke);
+
+            startNewTournamentRound();
+        }
+
+        function clearTournamentCanvas() {
+            const canvas = document.getElementById('tour-canvas');
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            appState.tournament.strokes = [];
+            updateTournamentPrediction();
+        }
+
+        function setSpecificTarget(index) {
+            appState.tournament.targetIndex = index;
+            appState.tournament.roundWon = false;
+            document.getElementById('tour-win-overlay').classList.add('hidden');
+            clearTournamentCanvas();
+            updateTournamentTargetUI();
+            focus3DShape(index);
+        }
+
+        function updateTournamentTargetUI() {
+            const idx = appState.tournament.targetIndex;
+            const nameEl = document.getElementById('tour-target-name');
+            const iconEl = document.getElementById('tour-target-icon');
+            nameEl.textContent = DRAW_MODEL_META.classes[idx];
+            nameEl.style.color = DRAW_MODEL_META.colors[idx];
+            iconEl.textContent = DRAW_MODEL_META.icons[idx];
+        }
+
+        function startNewTournamentRound() {
+            appState.tournament.roundWon = false;
+            document.getElementById('tour-win-overlay').classList.add('hidden');
+            appState.tournament.targetIndex = (appState.tournament.targetIndex + 1) % 4;
+            appState.tournament.timeLeft = 20;
+            clearTournamentCanvas();
+            updateTournamentTargetUI();
+
+            if (appState.tournament.timerId) clearInterval(appState.tournament.timerId);
+            appState.tournament.timerId = setInterval(() => {
+                if (appState.currentSection !== 'tournament' || appState.tournament.roundWon) return;
+                appState.tournament.timeLeft--;
+                document.getElementById('tour-timer').textContent = `${appState.tournament.timeLeft}s`;
+                if (appState.tournament.timeLeft <= 0) {
+                    appState.tournament.timeLeft = 20;
+                    clearTournamentCanvas();
+                    showToast('زمان این دور تمام شد! دور جدید شروع شد.', 'warn');
+                }
+            }, 1000);
+        }
+
+        function updateTournamentPrediction() {
+            const canvas = document.getElementById('tour-canvas');
+            const preview = document.getElementById('tensor-28-canvas');
+            const probs = classifyDrawing(canvas, appState.tournament.strokes, preview, appState.tournament.targetIndex);
+            appState.tournament.currentProbs = probs;
+
+            let bestIdx = 0;
+            for (let i = 0; i < 4; i++) {
+                const pct = Math.round(probs[i] * 100);
+                document.getElementById(`prob-val-${i}`).textContent = `${pct}%`;
+                document.getElementById(`prob-bar-${i}`).style.width = `${pct}%`;
+                if (probs[i] > probs[bestIdx]) bestIdx = i;
+            }
+
+            const topBadge = document.getElementById('top-prediction-badge');
+            const maxPct = Math.round(probs[bestIdx] * 100);
+            if (maxPct < 28) {
+                topBadge.textContent = 'در حال تحلیل خطوط...';
+                topBadge.style.color = '#94a3b8';
+            } else {
+                topBadge.textContent = `تشخیص: ${DRAW_MODEL_META.icons[bestIdx]} ${DRAW_MODEL_META.classes[bestIdx]} (${maxPct}%)`;
+                topBadge.style.color = DRAW_MODEL_META.colors[bestIdx];
+            }
+
+            // Auto-trigger victory if target confidence >= 75%
+            const targetIdx = appState.tournament.targetIndex;
+            if (!appState.tournament.roundWon && probs[targetIdx] >= 0.74) {
+                triggerTournamentVictory(Math.round(probs[targetIdx] * 100));
+            }
+        }
+
+        function evaluateAndClaimTournamentWin() {
+            if (appState.tournament.roundWon) return;
+            if (appState.tournament.strokes.length === 0) {
+                showToast('لطفاً ابتدا شکل هدف را روی بوم نقاشی بکشید!', 'warn');
+                return;
+            }
+            const targetIdx = appState.tournament.targetIndex;
+            const conf = Math.round(appState.tournament.currentProbs[targetIdx] * 100);
+            if (conf >= 45) {
+                triggerTournamentVictory(Math.max(conf, 78));
+            } else {
+                showToast('نقاشی شما هنوز شباهت کافی به شکل هدف ندارد؛ چند خط دیگر اضافه کنید یا از دکمه راهنما کمک بگیرید!', 'warn');
+            }
+        }
+
+        function triggerTournamentVictory(confidencePct) {
+            appState.tournament.roundWon = true;
+            const speedBonus = Math.max(10, appState.tournament.timeLeft * 2);
+            const totalEarned = 150 + speedBonus;
+
+            awardPointsToUser(totalEarned);
+            playCyberSound('win');
+
+            document.getElementById('tour-win-detail').textContent = `تشخیص «${DRAW_MODEL_META.classes[appState.tournament.targetIndex]}» با دقت ${confidencePct}% • +${totalEarned} امتیاز دریافت کردید!`;
+            document.getElementById('tour-win-overlay').classList.remove('hidden');
+            showToast(`پیروزی در مسابقه! +${totalEarned} امتیاز به حساب شما در جدول اضافه شد.`, 'success');
+        }
+
+        // Draw a helper template stroke for the current target if user clicks "راهنمای رسم"
+        function drawHintTemplate() {
+            clearTournamentCanvas();
+            const canvas = document.getElementById('tour-canvas');
+            const ctx = canvas.getContext('2d');
+            const idx = appState.tournament.targetIndex;
+            const strokes = getVectorStrokesForClass(idx, canvas.width, canvas.height);
+
+            ctx.strokeStyle = DRAW_MODEL_META.colors[idx];
+            ctx.lineWidth = 14;
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+
+            strokes.forEach(s => {
+                ctx.beginPath();
+                s.forEach((pt, i) => {
+                    if (i === 0) ctx.moveTo(pt.x, pt.y);
+                    else ctx.lineTo(pt.x, pt.y);
+                });
+                ctx.stroke();
+            });
+
+            appState.tournament.strokes = strokes;
+            updateTournamentPrediction();
+        }
+
+        // Vector paths for the 4 classes (used both for Hint & for AI Bot drawing live)
+        function getVectorStrokesForClass(classIdx, w, h) {
+            const cx = w / 2, cy = h / 2, r = w * 0.31;
+            const strokes = [];
+
+            if (classIdx === 0) {
+                // صورت (Face: Outer circle + 2 eyes + smile arc)
+                const head = [];
+                for (let a = 0; a <= Math.PI * 2.05; a += 0.2) {
+                    head.push({ x: cx + Math.cos(a) * r, y: cy + Math.sin(a) * r });
+                }
+                strokes.push(head);
+                // Left Eye
+                strokes.push([{ x: cx - r * 0.38, y: cy - r * 0.25 }, { x: cx - r * 0.32, y: cy - r * 0.25 }]);
+                // Right Eye
+                strokes.push([{ x: cx + r * 0.32, y: cy - r * 0.25 }, { x: cx + r * 0.38, y: cy - r * 0.25 }]);
+                // Smile
+                const smile = [];
+                for (let a = 0.25 * Math.PI; a <= 0.75 * Math.PI; a += 0.15) {
+                    smile.push({ x: cx + Math.cos(a) * (r * 0.55), y: cy + Math.sin(a) * (r * 0.5) });
+                }
+                strokes.push(smile);
+            } else if (classIdx === 1) {
+                // گل (Flower: 5-petal rose curve + center circle)
+                const petals = [];
+                for (let a = 0; a <= Math.PI * 2.05; a += 0.1) {
+                    const pr = r * (0.62 + 0.38 * Math.cos(5 * a));
+                    petals.push({ x: cx + Math.cos(a) * pr, y: cy + Math.sin(a) * pr });
+                }
+                strokes.push(petals);
+                const core = [];
+                for (let a = 0; a <= Math.PI * 2.1; a += 0.35) {
+                    core.push({ x: cx + Math.cos(a) * (r * 0.22), y: cy + Math.sin(a) * (r * 0.22) });
+                }
+                strokes.push(core);
+            } else if (classIdx === 2) {
+                // مثلث (Triangle: 3 straight sides)
+                const top = { x: cx, y: cy - r * 0.95 };
+                const br = { x: cx + r * 0.95, y: cy + r * 0.85 };
+                const bl = { x: cx - r * 0.95, y: cy + r * 0.85 };
+                strokes.push(interpolateSegment(top, br, 12));
+                strokes.push(interpolateSegment(br, bl, 12));
+                strokes.push(interpolateSegment(bl, top, 12));
+            } else {
+                // مربع (Square: 4 straight axis-aligned sides)
+                const s = r * 0.85;
+                const tl = { x: cx - s, y: cy - s };
+                const tr = { x: cx + s, y: cy - s };
+                const br = { x: cx + s, y: cy + s };
+                const bl = { x: cx - s, y: cy + s };
+                strokes.push(interpolateSegment(tl, tr, 10));
+                strokes.push(interpolateSegment(tr, br, 10));
+                strokes.push(interpolateSegment(br, bl, 10));
+                strokes.push(interpolateSegment(bl, tl, 10));
+            }
+            return strokes;
+        }
+
+        function interpolateSegment(p1, p2, steps) {
+            const pts = [];
+            for (let i = 0; i <= steps; i++) {
+                const t = i / steps;
+                pts.push({
+                    x: p1.x + (p2.x - p1.x) * t,
+                    y: p1.y + (p2.y - p1.y) * t
+                });
+            }
+            return pts;
+        }
+
+        /* ==============================================================
+           11. SECTION 3: 1v1 AI BATTLE ENGINE (مبارزه با هوش مصنوعی)
+           ============================================================== */
+        let isDrawingBattle = false;
+        let currentBattleStroke = [];
+
+        function initAIBattleCanvas() {
+            const canvas = document.getElementById('battle-user-canvas');
+            const ctx = canvas.getContext('2d');
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+
+            function getPos(e) {
+                const rect = canvas.getBoundingClientRect();
+                const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+                const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+                return {
+                    x: (clientX - rect.left) * (canvas.width / rect.width),
+                    y: (clientY - rect.top) * (canvas.height / rect.height)
+                };
+            }
+
+            function startStroke(e) {
+                if (!appState.battle.active) {
+                    startAIBattle();
+                }
+                e.preventDefault();
+                isDrawingBattle = true;
+                const pos = getPos(e);
+                currentBattleStroke = [pos];
+                appState.battle.userStrokes.push(currentBattleStroke);
+                ctx.beginPath();
+                ctx.moveTo(pos.x, pos.y);
+            }
+
+            function moveStroke(e) {
+                if (!isDrawingBattle || !appState.battle.active) return;
+                e.preventDefault();
+                const pos = getPos(e);
+                currentBattleStroke.push(pos);
+
+                ctx.strokeStyle = '#4aa3ff';
+                ctx.lineWidth = 14;
+                ctx.shadowColor = '#4aa3ff';
+                ctx.shadowBlur = 6;
+                ctx.lineTo(pos.x, pos.y);
+                ctx.stroke();
+
+                evaluateBattleUserProgress();
+            }
+
+            function endStroke() {
+                if (!isDrawingBattle) return;
+                isDrawingBattle = false;
+                evaluateBattleUserProgress();
+            }
+
+            canvas.addEventListener('mousedown', startStroke);
+            canvas.addEventListener('mousemove', moveStroke);
+            window.addEventListener('mouseup', endStroke);
+
+            canvas.addEventListener('touchstart', startStroke, { passive: false });
+            canvas.addEventListener('touchmove', moveStroke, { passive: false });
+            window.addEventListener('touchend', endStroke);
+        }
+
+        function clearBattleUserCanvas() {
+            const canvas = document.getElementById('battle-user-canvas');
+            canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height);
+            appState.battle.userStrokes = [];
+            appState.battle.userConf = 0;
+            document.getElementById('battle-user-conf').textContent = '۰٪';
+            document.getElementById('battle-user-bar').style.width = '0%';
+        }
+
+        function startAIBattle() {
+            playCyberSound('click');
+            if (appState.battle.timerId) clearInterval(appState.battle.timerId);
+            if (appState.battle.aiDrawTimerId) clearInterval(appState.battle.aiDrawTimerId);
+
+            // Pick target shape
+            const nextTarget = Math.floor(Math.random() * 4);
+            appState.battle.targetIndex = nextTarget;
+            appState.battle.active = true;
+            appState.battle.timeLeft = 15;
+            appState.battle.userConf = 0;
+            appState.battle.aiConf = 0;
+
+            clearBattleUserCanvas();
+            const aiCanvas = document.getElementById('battle-ai-canvas');
+            const aiCtx = aiCanvas.getContext('2d');
+            aiCtx.clearRect(0, 0, aiCanvas.width, aiCanvas.height);
+
+            // Update UI badges
+            const targetBadge = document.getElementById('battle-target-badge');
+            targetBadge.textContent = `${DRAW_MODEL_META.icons[nextTarget]} ${DRAW_MODEL_META.classes[nextTarget]}`;
+            targetBadge.style.color = DRAW_MODEL_META.colors[nextTarget];
+
+            document.getElementById('battle-status-text').textContent = `مبارزه شروع شد! سریع یک «${DRAW_MODEL_META.classes[nextTarget]}» بکشید!`;
+            document.getElementById('ai-thinking-status').textContent = 'در حال رسم همزمان با شبکه عصبی...';
+
+            // Prepare AI Bot stroke-by-stroke animation
+            const aiStrokes = getVectorStrokesForClass(nextTarget, aiCanvas.width, aiCanvas.height);
+            let flatPoints = [];
+            aiStrokes.forEach(s => {
+                s.forEach((pt, idx) => {
+                    flatPoints.push({ x: pt.x + (Math.random() - 0.5) * 4, y: pt.y + (Math.random() - 0.5) * 4, isStart: idx === 0 });
+                });
+            });
+
+            const diff = document.getElementById('ai-difficulty').value;
+            const intervalMs = diff === 'easy' ? 230 : (diff === 'medium' ? 165 : 115);
+            let ptIndex = 0;
+
+            appState.battle.aiDrawTimerId = setInterval(() => {
+                if (!appState.battle.active) return;
+                if (ptIndex < flatPoints.length) {
+                    const pt = flatPoints[ptIndex];
+                    aiCtx.strokeStyle = '#ff5fa2';
+                    aiCtx.lineWidth = 13;
+                    aiCtx.lineCap = 'round';
+                    aiCtx.shadowColor = '#ff5fa2';
+                    aiCtx.shadowBlur = 6;
+
+                    if (pt.isStart || ptIndex === 0) {
+                        aiCtx.beginPath();
+                        aiCtx.moveTo(pt.x, pt.y);
+                    } else {
+                        const prev = flatPoints[ptIndex - 1];
+                        aiCtx.beginPath();
+                        aiCtx.moveTo(prev.x, prev.y);
+                        aiCtx.lineTo(pt.x, pt.y);
+                        aiCtx.stroke();
+                    }
+                    ptIndex++;
+                    const progressRatio = ptIndex / flatPoints.length;
+                    appState.battle.aiConf = Math.min(86, Math.round(progressRatio * 84));
+                    document.getElementById('battle-ai-conf').textContent = `${appState.battle.aiConf}٪`;
+                    document.getElementById('battle-ai-bar').style.width = `${appState.battle.aiConf}%`;
+
+                    if (appState.battle.aiConf >= 84) {
+                        concludeAIBattle(false);
+                    }
+                }
+            }, intervalMs);
+
+            // Battle Countdown Timer
+            appState.battle.timerId = setInterval(() => {
+                if (!appState.battle.active) return;
+                appState.battle.timeLeft--;
+                document.getElementById('battle-timer').textContent = `${appState.battle.timeLeft}s`;
+                if (appState.battle.timeLeft <= 0) {
+                    concludeAIBattle(appState.battle.userConf >= appState.battle.aiConf);
+                }
+            }, 1000);
+        }
+
+        function evaluateBattleUserProgress() {
+            if (!appState.battle.active) return;
+            const canvas = document.getElementById('battle-user-canvas');
+            const probs = classifyDrawing(canvas, appState.battle.userStrokes, null, appState.battle.targetIndex);
+            const targetConf = Math.round(probs[appState.battle.targetIndex] * 100);
+            appState.battle.userConf = targetConf;
+
+            document.getElementById('battle-user-conf').textContent = `${targetConf}٪`;
+            document.getElementById('battle-user-bar').style.width = `${targetConf}%`;
+
+            if (targetConf >= 75) {
+                concludeAIBattle(true);
+            }
+        }
+
+        function finishBattleEarlyCheck() {
+            if (!appState.battle.active) {
+                showToast('ابتدا دکمه «شروع مبارزه جدید» را بزنید!', 'info');
+                return;
+            }
+            if (appState.battle.userConf >= 45 || appState.battle.userConf > appState.battle.aiConf) {
+                concludeAIBattle(true);
+            } else {
+                showToast('دقت طرح شما هنوز از ربات کمتر است؛ به کشیدن ادامه دهید!', 'warn');
+            }
+        }
+
+        function concludeAIBattle(userWon) {
+            appState.battle.active = false;
+            if (appState.battle.timerId) clearInterval(appState.battle.timerId);
+            if (appState.battle.aiDrawTimerId) clearInterval(appState.battle.aiDrawTimerId);
+
+            const diff = document.getElementById('ai-difficulty').value;
+            const reward = diff === 'easy' ? 150 : (diff === 'medium' ? 220 : 350);
+            const statusText = document.getElementById('battle-status-text');
+
+            if (userWon) {
+                appState.battle.userTotalWins++;
+                awardPointsToUser(reward);
+                playCyberSound('win');
+                statusText.textContent = `🏆 تبریک! شما ربات نئون-X را شکست دادید و +${reward} امتیاز گرفتید!`;
+                statusText.className = 'text-sm font-black text-cyber-green';
+                showToast(`برد در برابر هوش مصنوعی! +${reward} امتیاز به جدول شما اضافه شد.`, 'success');
+            } else {
+                appState.battle.aiTotalWins++;
+                playCyberSound('lose');
+                statusText.textContent = '🤖 ربات نئون-X این دور را زودتر کامل کرد! روی «شروع مبارزه جدید» بزنید.';
+                statusText.className = 'text-sm font-black text-cyber-pink';
+                showToast('ربات نئون-X این دور برنده شد! دوباره تلاش کنید.', 'warn');
+            }
+
+            document.getElementById('battle-score-summary').textContent = `شما ${appState.battle.userTotalWins} - ${appState.battle.aiTotalWins} هوش مصنوعی`;
+        }
+
+        /* ==============================================================
+           12. SCORE & LEADERBOARD SYSTEM (جدول مسابقه)
+           ============================================================== */
+        function awardPointsToUser(points) {
+            appState.user.score += points;
+            appState.user.wins += 1;
+
+            // Update Header & Tournament Counters
+            document.getElementById('header-user-score').textContent = appState.user.score.toLocaleString('fa-IR');
+            document.getElementById('tour-wins-count').textContent = appState.user.wins.toLocaleString('fa-IR');
+
+            // Sync with Leaderboard Entry
+            const userEntry = appState.leaderboard.find(p => p.isUser);
+            if (userEntry) {
+                userEntry.score = appState.user.score;
+                userEntry.wins = appState.user.wins;
+                userEntry.name = appState.user.name;
+                userEntry.avatar = appState.user.avatar;
+            }
+            renderLeaderboard();
+        }
+
+        function renderLeaderboard() {
+            // Sort descending by score
+            appState.leaderboard.sort((a, b) => b.score - a.score);
+
+            // Render Top 3 Podium
+            const podiumEl = document.getElementById('leaderboard-podium');
+            const top3 = appState.leaderboard.slice(0, 3);
+            const medals = ['🥇 رتبه اول', '🥈 رتبه دوم', '🥉 رتبه سوم'];
+            const borders = ['border-amber-400/60', 'border-slate-300/50', 'border-amber-700/50'];
+
+            podiumEl.innerHTML = top3.map((p, idx) => `
+                <div class="spatial-glass rounded-3xl p-5 border-2 ${borders[idx]} flex items-center justify-between ${p.isUser ? 'ring-2 ring-cyber-blue' : ''}">
+                    <div class="flex items-center gap-3.5">
+                        <div class="w-14 h-14 rounded-2xl bg-white/10 flex items-center justify-center text-3xl shadow-inner">
+                            ${p.avatar}
+                        </div>
+                        <div>
+                            <span class="text-[11px] font-black text-amber-400">${medals[idx]}</span>
+                            <h4 class="font-black text-base flex items-center gap-1.5">
+                                ${p.name}
+                                ${p.isUser ? '<span class="text-[10px] px-2 py-0.5 rounded-full bg-cyber-blue text-white">شما</span>' : ''}
+                            </h4>
+                            <span class="text-xs opacity-70">${p.title}</span>
+                        </div>
+                    </div>
+                    <div class="text-left">
+                        <div class="text-xl font-black text-cyber-green">${p.score.toLocaleString('fa-IR')}</div>
+                        <div class="text-[10px] opacity-75">${p.wins.toLocaleString('fa-IR')} پیروزی</div>
+                    </div>
+                </div>
+            `).join('');
+
+            // Render Full Table
+            const tbody = document.getElementById('leaderboard-tbody');
+            tbody.innerHTML = appState.leaderboard.map((p, idx) => `
+                <tr class="${p.isUser ? 'bg-cyber-blue/15 font-bold' : 'hover:bg-white/5'} transition">
+                    <td class="py-4 px-5 font-black text-base">
+                        #${(idx + 1).toLocaleString('fa-IR')}
+                    </td>
+                    <td class="py-4 px-5">
+                        <div class="flex items-center gap-3">
+                            <span class="w-9 h-9 rounded-xl bg-white/10 flex items-center justify-center text-lg">${p.avatar}</span>
+                            <div>
+                                <div class="font-black text-sm flex items-center gap-2">
+                                    ${p.name}
+                                    ${p.isUser ? '<span class="text-[10px] px-2 py-0.5 rounded-full bg-cyber-green/20 text-cyber-green border border-cyber-green/40">کاربر فعلی</span>' : ''}
+                                </div>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="py-4 px-5 text-xs opacity-80">${p.title}</td>
+                    <td class="py-4 px-5 text-xs font-bold text-cyber-blue">${p.wins.toLocaleString('fa-IR')} برد</td>
+                    <td class="py-4 px-5 text-xs">${p.specialty}</td>
+                    <td class="py-4 px-5 text-left font-black text-base text-amber-400">${p.score.toLocaleString('fa-IR')} امتیاز</td>
+                </tr>
+            `).join('');
+        }
+
+        /* ==============================================================
+           13. SECTION 5: COMMENTS SYSTEM (بخش نظرات)
+           ============================================================== */
+        function setCommentStars(stars) {
+            appState.selectedCommentStars = stars;
+            showToast(`امتیاز ${stars} ستاره انتخاب شد`, 'info');
+        }
+
+        function renderComments() {
+            const listEl = document.getElementById('comments-list');
+            document.getElementById('comments-total-badge').textContent = `${appState.comments.length.toLocaleString('fa-IR')} نظر ثبت شده`;
+
+            listEl.innerHTML = appState.comments.map(c => `
+                <div class="spatial-glass rounded-2xl p-5 space-y-3 border border-slate-500/20 hover:border-cyber-blue/40 transition">
+                    <div class="flex flex-wrap items-center justify-between gap-2">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-xl bg-cyber-blue/15 border border-cyber-blue/30 flex items-center justify-center text-xl">
+                                ${c.avatar}
+                            </div>
+                            <div>
+                                <div class="flex items-center gap-2">
+                                    <h4 class="font-black text-sm">${c.author}</h4>
+                                    <span class="text-[10px] px-2 py-0.5 rounded-full bg-cyber-purple/20 text-cyber-purple font-bold">${c.badge}</span>
+                                </div>
+                                <span class="text-[11px] opacity-60">${c.time} • بخش: ${c.category}</span>
+                            </div>
+                        </div>
+                        <div class="text-amber-400 text-xs">
+                            ${'⭐'.repeat(c.stars)}
+                        </div>
+                    </div>
+                    <p class="text-xs sm:text-sm leading-relaxed opacity-90">${c.text}</p>
+                    <div class="flex items-center justify-end pt-1">
+                        <button onclick="likeComment(${c.id})" class="px-3 py-1 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 text-xs font-bold flex items-center gap-1.5 transition">
+                            <i class="fa-solid fa-heart"></i>
+                            <span>${c.likes.toLocaleString('fa-IR')}</span>
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function likeComment(id) {
+            const comment = appState.comments.find(c => c.id === id);
+            if (comment) {
+                comment.likes++;
+                playCyberSound('click');
+                renderComments();
+            }
+        }
+
+        function submitUserComment(event) {
+            event.preventDefault();
+            const textEl = document.getElementById('comment-text');
+            const catEl = document.getElementById('comment-category');
+            const text = textEl.value.trim();
+            if (!text) return;
+
+            appState.comments.unshift({
+                id: Date.now(),
+                author: appState.user.name,
+                avatar: appState.user.avatar,
+                badge: appState.user.isLoggedIn ? 'کاربر عضو' : 'کاربر مهمان',
+                category: catEl.value,
+                stars: appState.selectedCommentStars,
+                time: 'همین الان',
+                likes: 1,
+                text: text
+            });
+
+            textEl.value = '';
+            playCyberSound('win');
+            renderComments();
+            showToast('نظر شما با موفقیت در بخش نظرات منتشر شد!', 'success');
+        }
+
+        /* ==============================================================
+           14. SECTION 6: SUPPORT & LIVE CHAT (پشتیبانی)
+           ============================================================== */
+        function sendQuickSupportQuestion(qText) {
+            const input = document.getElementById('support-chat-input');
+            input.value = qText;
+            handleSupportChatSubmit(new Event('submit'));
+        }
+
+        function handleSupportChatSubmit(event) {
+            if (event.preventDefault) event.preventDefault();
+            const input = document.getElementById('support-chat-input');
+            const msg = input.value.trim();
+            if (!msg) return;
+
+            const chatBox = document.getElementById('support-chat-box');
+            // Append User Message
+            const userDiv = document.createElement('div');
+            userDiv.className = 'flex items-start gap-2.5 flex-row-reverse';
+            userDiv.innerHTML = `
+                <span class="w-8 h-8 rounded-xl bg-cyber-purple/20 flex items-center justify-center shrink-0">${appState.user.avatar}</span>
+                <div class="p-3 rounded-2xl rounded-tl-none bg-cyber-purple/20 border border-cyber-purple/40 text-xs leading-relaxed">
+                    ${msg}
+                </div>
+            `;
+            chatBox.appendChild(userDiv);
+            input.value = '';
+            chatBox.scrollTop = chatBox.scrollHeight;
+            playCyberSound('click');
+
+            // Smart Automated Response
+            setTimeout(() => {
+                let reply = 'پشتیبان هوشمند: پیام شما دریافت شد! در «نئون‌ورس ۲۰۲۷» می‌توانید در بخش مسابقه نقاشی یا مبارزه با هوش مصنوعی امتیاز جمع کنید و رتبه اول جدول شوید.';
+                if (msg.includes('امتیاز') || msg.includes('جدول')) {
+                    reply = 'هر پیروزی در بخش «مسابقه مدل هوشمند» ۱۵۰+ امتیاز و هر برد در برابر «هوش مصنوعی نئون-X» بین ۱۵۰ تا ۳۵۰ امتیاز به حساب شما در جدول رده‌بندی اضافه می‌کند!';
+                } else if (msg.includes('مدل') || msg.includes('شکل')) {
+                    reply = 'مدل شبکه عصبی این سایت روی ۴ کلاس «صورت 😊»، «گل 🌸»، «مثلث 🔺» و «مربع 🟦» با ابعاد ۲۸×۲۸ آموزش دیده است.';
+                } else if (msg.includes('مهمان') || msg.includes('لاگین')) {
+                    reply = 'بله! اگر لاگین نکنید به صورت خودکار «کاربر مهمان» هستید و تمام امتیازات و بردهای شما در جدول مسابقه ثبت می‌شود. هر زمان بخواهید می‌توانید نام خود را تغییر دهید.';
+                }
+
+                const botDiv = document.createElement('div');
+                botDiv.className = 'flex items-start gap-2.5';
+                botDiv.innerHTML = `
+                    <span class="w-8 h-8 rounded-xl bg-cyber-blue/20 flex items-center justify-center text-cyber-blue shrink-0">🤖</span>
+                    <div class="p-3 rounded-2xl rounded-tr-none bg-cyber-blue/15 border border-cyber-blue/30 text-xs leading-relaxed">
+                        ${reply}
+                    </div>
+                `;
+                chatBox.appendChild(botDiv);
+                chatBox.scrollTop = chatBox.scrollHeight;
+                playCyberSound('click');
+            }, 450);
+        }
+
+        function submitSupportTicket(event) {
+            event.preventDefault();
+            const subj = document.getElementById('ticket-subject').value.trim();
+            const dept = document.getElementById('ticket-dept').value;
+            if (!subj) return;
+
+            const trackingCode = 'NV-' + Math.floor(10000 + Math.random() * 90000);
+            const historyEl = document.getElementById('tickets-history');
+            const item = document.createElement('div');
+            item.className = 'p-3 rounded-xl bg-cyber-green/15 border border-cyber-green/30 text-xs flex items-center justify-between';
+            item.innerHTML = `
+                <div>
+                    <span class="font-black text-cyber-green">کد پیگیری: ${trackingCode}</span>
+                    <span class="mx-1">•</span>
+                    <span class="font-bold">${subj}</span>
+                    <span class="opacity-70 text-[10px]">(${dept})</span>
+                </div>
+                <span class="px-2 py-0.5 rounded-full bg-cyber-green/20 text-cyber-green font-bold text-[10px]">ثبت شد</span>
+            `;
+            historyEl.prepend(item);
+
+            document.getElementById('ticket-subject').value = '';
+            document.getElementById('ticket-body').value = '';
+            playCyberSound('win');
+            showToast(`تیکت پشتیبانی شما با کد رهگیری ${trackingCode} ثبت شد!`, 'success');
+        }
+
+        /* ==============================================================
+           15. SECTION 7: LOGIN & AUTOMATIC GUEST SYSTEM
+           ============================================================== */
+        let tempSelectedAvatar = '👾';
+
+        function selectLoginAvatar(emoji) {
+            tempSelectedAvatar = emoji;
+            document.getElementById('login-preview-avatar').textContent = emoji;
+            playCyberSound('click');
+        }
+
+        function handleUserLogin(event) {
+            event.preventDefault();
+            const nameInput = document.getElementById('login-username-input').value.trim();
+            if (!nameInput) return;
+
+            appState.user.isLoggedIn = true;
+            appState.user.name = nameInput;
+            appState.user.avatar = tempSelectedAvatar;
+
+            syncUserUI();
+            playCyberSound('win');
+            showToast(`خوش آمدید «${nameInput}»! نام شما در جدول امتیازات بروزرسانی شد.`, 'success');
+            switchSection('home');
+        }
+
+        function switchToGuestMode() {
+            appState.user.isLoggedIn = false;
+            appState.user.name = 'کاربر مهمان';
+            appState.user.avatar = '👾';
+            syncUserUI();
+            playCyberSound('click');
+            showToast('شما در حالت «کاربر مهمان» هستید و می‌توانید آزادانه بازی کنید.', 'info');
+            switchSection('home');
+        }
+
+        function syncUserUI() {
+            document.getElementById('header-user-name').textContent = appState.user.name;
+            document.getElementById('header-user-avatar').textContent = appState.user.avatar;
+            document.getElementById('header-user-status').textContent = appState.user.isLoggedIn ? 'اکانت رسمی فعال' : 'حالت مهمان فعال';
+            document.getElementById('comment-form-username').textContent = appState.user.name;
+            document.getElementById('battle-user-title').textContent = `بوم طراحی شما (${appState.user.name})`;
+            document.getElementById('battle-user-avatar').textContent = appState.user.avatar;
+
+            const userRow = appState.leaderboard.find(p => p.isUser);
+            if (userRow) {
+                userRow.name = appState.user.name;
+                userRow.avatar = appState.user.avatar;
+                userRow.title = appState.user.isLoggedIn ? 'گیمر رسمی نئون‌ورس' : 'بازیکن مهمان (شما)';
+            }
+            renderLeaderboard();
+        }
+
+        /* ==============================================================
+           16. INITIALIZE EVERYTHING ON WINDOW LOAD
+           ============================================================== */
+        window.onload = function () {
+            init3DWorld();
+            animate3DLoop();
+            init3DTiltCards();
+            initTournamentCanvas();
+            initAIBattleCanvas();
+            renderLeaderboard();
+            renderComments();
+        };
+    </script>
+</body>
+</html>
